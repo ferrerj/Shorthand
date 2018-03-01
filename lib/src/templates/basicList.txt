@@ -1,0 +1,77 @@
+// Data struct for the list items
+class {ViewName} {
+  {ObjectFields}
+  {ViewName}({ObjectBuilder});
+  // Make a toString() function
+}
+// state holder for the items
+class {ViewName}Item extends StatefulWidget{
+
+  final {ViewName} item;
+
+  {ViewName}Item({ViewName} item)
+      : item = item,
+        super(key: new ObjectKey(item));
+
+  @override
+  {ViewName}ItemState createState() {
+    return new {ViewName}ItemState(item);
+  }
+}
+// defines what each list item looks like
+class {ViewName}ItemState extends State<{ViewName}Item> {
+
+  final {ViewName} item;
+
+  {ViewName}ItemState(this.item);
+  // Should be adjusted to allow easier modding
+  @override
+  Widget build(BuildContext context) {
+    return new ListTile(
+        {TapAction}
+        title: new Row(
+          children: <Widget>[
+            new Expanded(child: new Text(item.toString())),
+          ],
+        )
+    );
+  }
+}
+// list state holder
+class {ViewName}List extends StatefulWidget {
+  {ViewName}List({Key key, this.item}) :super(key: key);
+
+  List<{ViewName}> item;
+
+  @override
+  _{ViewName}ListState createState() {
+    return new _{ViewName}ListState();
+  }
+}
+// defines what the page looks like
+class _{ViewName}ListState extends State<{ViewName}List> {
+  // page layout stuff here.
+  @override
+  Widget build(BuildContext context) {
+    return new Scaffold(
+        appBar: new AppBar(
+          title: new Text("{ViewName}"),
+        ),
+        body: new Container(
+          padding: new EdgeInsets.all(8.0),
+          child: new Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: <Widget>[
+              new Expanded(child: new ListView(
+                padding: new EdgeInsets.symmetric(vertical: 8.0),
+                // start changes here for just items
+                children: widget.item.map(({ViewName} item) {
+                  return new {ViewName}Item(item);
+                }).toList(),
+              )),
+            ],
+          ),
+        )
+    );
+  }
+}

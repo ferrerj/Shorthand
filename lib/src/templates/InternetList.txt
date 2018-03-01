@@ -1,0 +1,112 @@
+// Data struct for the list items
+class {ViewName} {
+   {ObjectFields} 
+  {ViewName}({ObjectBuilder});
+    // implement toString() function if you want
+}
+// state holder for the items
+class {ViewName}Item extends StatefulWidget{
+
+  final {ViewName} item;
+
+  {ViewName}Item({ViewName} item)
+      : item = item,
+        super(key: new ObjectKey(item));
+
+  @override
+  {ViewName}ItemState createState() {
+    return new {ViewName}ItemState(item);
+  }
+}
+// defines what each list item looks like
+class {ViewName}ItemState extends State<{ViewName}Item> {
+
+  final {ViewName} item;
+
+  {ViewName}ItemState(this.item);
+  // How each list item looks
+  @override
+  Widget build(BuildContext context) {
+    return new ListTile(
+        {TapAction}
+        title: new Row(
+          children: <Widget>[
+            new Expanded(child: new Text(item.toString())),
+          ],
+        )
+    );
+  }
+}
+// list state holder
+class {ViewName}List extends StatefulWidget {
+  {ViewName}List({Key key}) :super(key: key);
+
+  {KeyInputs}
+
+  @override
+  _{ViewName}ListState createState() {
+    return new _{ViewName}ListState();
+  }
+}
+// defines what the page looks like
+class _{ViewName}ListState extends State<{ViewName}List> {
+  bool loaded = false;
+  List<{ViewName}> item = new List<{ViewName}>();
+
+  getData() async {
+    var url = '{HostName}{RoutingInfo}{KeyInputsURL}';
+    var httpClient = new HttpClient();
+
+    try {
+      var request = await httpClient.getUrl(Uri.parse(url));
+      var response = await request.close();
+      if (response.statusCode == HttpStatus.OK) {
+        var json = await response.transform(UTF8.decoder).join();
+        var data = JSON.decode(json);
+        List<dynamic> tempJson = data;
+        tempJson.forEach((String elem)=>item.add(new {ViewName}(elem)));
+      } else {
+        print('Error getting data');
+      }
+    } catch (exception) {
+      print("Exception: ${exception.toString()}");
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      loaded = true;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context){
+    if(loaded==true){
+      // how each list looks (list item is above)
+      return new Scaffold(
+          appBar: new AppBar(
+            title: new Text("{ViewName}"),
+          ),
+          body: new Container(
+            padding: new EdgeInsets.all(8.0),
+            child: new Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: <Widget>[
+                new Expanded(child: new ListView(
+                  padding: new EdgeInsets.symmetric(vertical: 8.0),
+                  // start changes here for just items
+                  children: item.map(({ViewName} item) {
+                    return new {ViewName}Item(item);
+                  }).toList(),
+                )),
+              ],
+            ),
+          )
+      );
+    } else {
+      getData(); // load the URL
+      // change this for different loading screens
+      return new CircularProgressIndicator();
+    }
+  }
+}
