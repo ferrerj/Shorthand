@@ -160,6 +160,93 @@ class HostName extends GlobalDataRule {
   const HostName(String payload) : super("HostName", payload);
 }
 
+enum InputFormat {JSON, CSV, Slashes, AndData, PositionalData}
+// class for GET/POST/COOKIE Data
+abstract class InputStorageMethod extends GlobalDataRule {
+  final dynamic inputFormat;
+  const InputStorageMethod (this.inputFormat) : super("InputStorageMethod", "");
+  // to be implemented later
+  _mapFromJSON(String input){}
+  // to be implemented later
+  _mapFromCSV(String input){}
+  // getting data like /name1/data1/.../namex/datax
+  _mapFromSlashes(String input){
+    Map ret = new Map();
+    int i = 0;
+    String name;
+    input.split("/").forEach((stringPart){
+      if(i++%2==0){
+        name = stringPart;
+      } else {
+        ret[name] = stringPart;
+      }
+    });
+    return ret;
+  }
+  // getting data like /?name1=data1&...&namex=datax
+  // the leading /? is optional
+  _mapFromAndData(String input){
+    if(input[0]=="?"){
+      input = input.substring(1);
+    }
+    Map ret = new Map();
+    input.split("&").forEach((stringPart){
+      List parts = stringPart.split("=");
+      ret[parts[0]] = parts[1];
+    });
+    return ret;
+  }
+  // getting data like /[1]/[2]/.../[x]
+  // returns map <number, value>
+  _mapFromPositionalData(String input){
+    Map ret = new Map();
+    int i = 0;
+    input.split("/").forEach((stringPart){
+      ret[(i++).toString()] = stringPart;
+    });
+    return ret;
+  }
+  returnMap(List cookies, dynamic getData, String postData);
+  getProcessingFunction(){
+    if(this.inputFormat == InputFormat.JSON){
+      return _mapFromJSON;
+    } else if(this.inputFormat == InputFormat.CSV){
+      return _mapFromCSV;
+    } else if(this.inputFormat == InputFormat.AndData){
+      return _mapFromAndData;
+    } else if(this.inputFormat == InputFormat.PositionalData){
+      return _mapFromPositionalData;
+    } else if(this.inputFormat == InputFormat.Slashes){
+      return _mapFromSlashes;
+    }
+  }
+}
+
+class GetData extends InputStorageMethod {
+  const GetData (dynamic inputFormat) : super(inputFormat);
+  returnMap(List cookies, dynamic getData, String postData){
+
+  }
+}
+
+class PostData extends InputStorageMethod {
+  const PostData (dynamic inputFormat) : super(inputFormat);
+  returnMap(List cookies, dynamic getData, String postData){
+
+  }
+}
+
+class CookieData extends InputStorageMethod {
+  const CookieData (dynamic inputFormat) : super(inputFormat);
+  returnMap(List cookies, dynamic getData, String postData){
+    Map<String, String> ret;
+    cookies.forEach((Cookie cookie){
+      ret[cookie.name] = cookie.value;
+    });
+    return ret;
+  }
+}
+
 /* Helper Objects */
 
 // non constant helper class to get all data points for a function

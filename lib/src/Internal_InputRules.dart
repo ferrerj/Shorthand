@@ -1,5 +1,7 @@
 part of Shorthand_base;
 
+// its looking more and more like this will be scrapped for special data rules
+
 // Rules to control inputs into the functions of the API
 abstract class InputRule extends RuleBase {
   const InputRule ();
@@ -23,35 +25,4 @@ abstract class InputTypeRule extends InputRule {
   const InputTypeRule();
   processInputs(String get, String post, List cookie); // generate functions to check inputs
   countInputs(); // make sure there are enough inputs and declared inputs
-}
-
-abstract class GetData extends InputDataRule{
-  GetData(String arg, String name) : super(DataInputType.GET, arg, name);
-}
-
-abstract class PostData extends InputDataRule {
-  PostData(String arg, String name) : super(DataInputType.POST, arg, name);
-}
-// this is only a key store, shouldn't really have JSON or other formating to seperate out the different content fields
-abstract class CookieData extends InputDataRule {
-  CookieData(String arg, String name) : super(DataInputType.COOKIE, arg, name);
-}
-
-
-// these are used to reduce the amount of work in isolating data from the above classes
-// these will be used as mixins with the above classes
-abstract class FromJSON {
-  // from data stored in a JSON object
-}
-
-abstract class FromCSV {
-  // from comma seperated data
-}
-
-abstract class FromSlashData {
-  // stored as /name/data
-}
-// really going to start with this one (for personal projects) and will do the others next
-abstract class FromAndData {
-  // stored as ?var1=data1&
 }
