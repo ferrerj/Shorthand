@@ -246,6 +246,10 @@ class CookieData extends InputStorageMethod {
     return ret;
   }
 }
+// gets a class object which declares where to find data (get, post, cookie) and how to map it to a name used in a function
+class DataSources extends GlobalDataRule {
+  const DataSources(dynamic model) : super("DataSources", "");
+}
 
 /* Helper Objects */
 
