@@ -57,6 +57,7 @@ class Shorthand {
     for (Symbol x in ll) {
       String objectMemberName =
           x.toString().substring(8, x.toString().length - 2);
+      print(objectMemberName);
       // stores external/data rules to be iterated over later
       DataAggregate da = new DataAggregate();
       ExternalRuleAggregate era = new ExternalRuleAggregate();
@@ -67,13 +68,16 @@ class Shorthand {
       for (InstanceMirror annotation in cm.declarations[x].metadata) {
         if (annotation.reflectee is RuleBase) {
           if (annotation.reflectee is MapRule) {
+            print("Is map rule");
             MapRule mr = annotation.reflectee;
             m.addAll(
                 mr.executeRule(objectMemberName, im.getField(x).reflectee));
           } else if (annotation.reflectee is DataRule) {
+            print("Is data rule");
             da.addToAggregate(
                 {nameOfTheThing(annotation): annotation.reflectee});
           } else if (annotation.reflectee is ExternalRule) {
+            print("Is external rule");
             era.addToAggregate(
                 {nameOfTheThing(annotation): annotation.reflectee});
           }

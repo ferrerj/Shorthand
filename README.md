@@ -12,17 +12,7 @@ They are designed to be flexible, extendable, and general-purpose so that you ca
 
 While MapServer provides a web server to be used, it is not the only solution and this framework was built with the intention of being web server agnostic.
 
-There are three main types of rules which are used in the framework, each of which can be extended as necessary, they are: Internal Rules, Data Rules, and External Rules.
-
-### Internal Rules
-
-Internal Rules are used to build the API map used in the MapServer (detailed below). They are the link between the two core concepts of this framework.
-
-The MapServer does routing based on a Map<String, (Function||Map)> structure and these rules build the map to be used by the server.
-
-For example, the @EndPoint rule designates a full URL and the remainder of the URL components are passed as a list, while @Route, builds a Map in the map for additional routes.
-
-Not all internal rules require a function or a map, @StaticContent may be used to load a file or sting into memory and loads it into a function to be called by the MapServer.
+There are three main types of rules which are used in the framework, each of which can be extended as necessary, they are (in the order they should be listed above the function or variable they modify): Data Rules, External Rules, and Internal Rules.
 
 ### Data Rules
 
@@ -39,6 +29,16 @@ External rules are probably the most interesting part of the framework, they do 
 There are not many external rules made yet, however the goal is to build out a robust library of common app functions and data displaying widgets to simplify full stack development.
 
 The best example available right now is the InternetList, which builds a flutter list using a JSON array that just simply works.
+
+### Internal Rules
+
+Internal Rules are used to build the API map used in the MapServer (detailed below). They are the link between the two core concepts of this framework.
+
+The MapServer does routing based on a Map<String, (Function||Map)> structure and these rules build the map to be used by the server, as such there should only be one internal rule per function or variable.
+
+For example, the @EndPoint rule designates a full URL and the remainder of the URL components are passed as a list, while @Route, builds a Map in the map for additional routes.
+
+Not all internal rules require a function or a map, @StaticContent may be used to load a file or sting into memory and loads it into a function to be called by the MapServer.
 
 ## MapServer
 

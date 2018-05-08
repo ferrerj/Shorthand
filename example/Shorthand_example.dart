@@ -16,6 +16,7 @@ home(List args, List cookies) {
 
 @HostName("http://192.168.1.19")
 class TestClass {
+  // should be skipped
   var test;
 
   @InternetList("Artists")
