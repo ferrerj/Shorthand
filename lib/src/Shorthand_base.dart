@@ -68,16 +68,23 @@ class Shorthand {
       for (InstanceMirror annotation in cm.declarations[x].metadata) {
         if (annotation.reflectee is RuleBase) {
           if (annotation.reflectee is MapRule) {
-            print("Is map rule");
             MapRule mr = annotation.reflectee;
-            m.addAll(
-                mr.executeRule(objectMemberName, im.getField(x).reflectee));
+            if(cm.instanceMembers[x]!=null){
+              // it is a method, will pass method mirror instead
+              m.addAll(
+                  mr.executeRule(objectMemberName, {"parameters": cm.instanceMembers[x].parameters, /*used to map get/post/cookie vars to inputs*/
+                                                    "instanceMirror": im, /*holds function*/
+                                                    "symbol": x /*how to find function in instanceMirror*/ }));
+            } else {
+              // it is a string or some other special data type,
+              // just pass the object, they'll know what to do
+              m.addAll(
+                  mr.executeRule(objectMemberName, im.getField(x).reflectee));
+            }
           } else if (annotation.reflectee is DataRule) {
-            print("Is data rule");
             da.addToAggregate(
                 {nameOfTheThing(annotation): annotation.reflectee});
           } else if (annotation.reflectee is ExternalRule) {
-            print("Is external rule");
             era.addToAggregate(
                 {nameOfTheThing(annotation): annotation.reflectee});
           }

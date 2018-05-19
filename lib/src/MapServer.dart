@@ -96,6 +96,9 @@ class MapServer {
             level: level++, subMap: useThisMap[route[level]]);
       } else {
         // found a page to generate
+        // route.sublist(level) gets all params after the routing and passes them as a list
+        // cookies, passes the cookies
+        // still need to find way to get post data.
         return useThisMap[route[level]](route.sublist(level), cookies);
       }
     }

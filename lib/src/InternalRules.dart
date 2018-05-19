@@ -68,9 +68,23 @@ class EndPoint extends MapRule implements RuleBase {
 
   const EndPoint();
 
+  // obj is really a map of the params, the instance mirror,
+  // and the symbol in the instance mirror
   Map transformData(var name, var obj) {
+    Map<String, dynamic> input = obj;
+    InstanceMirror im = reflect(input);
+    // map the post/cookie/get data to the inputs of the function
+    // build the function
     return {name: obj};
+
   }
+}
+
+class HttpRequestHandler{
+  List<Function> inputs; // list of functions which get parameters from get/post/cookie
+  InstanceMirror im; // instance mirror containing the function
+  Symbol s; // name of function to invoke from instancemirror
+  HttpRequestHandler(this.inputs, this.im, this.s);
 }
 
 // used for static content, mainly strings to be served
