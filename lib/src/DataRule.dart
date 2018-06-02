@@ -160,17 +160,17 @@ class HostName extends GlobalDataRule {
   const HostName(String payload) : super("HostName", payload);
 }
 
-enum InputFormat {JSON, CSV, Slashes, AndData, PositionalData}
+enum InputFormat {JSON, CSV, Slashes, AndData, PositionalData, Cookie}
 // class for GET/POST/COOKIE Data
 abstract class InputStorageMethod extends GlobalDataRule {
   final dynamic inputFormat;
   const InputStorageMethod (this.inputFormat) : super("InputStorageMethod", "");
   // to be implemented later
-  _mapFromJSON(String input){}
+  mapFromJSON(String input){}
   // to be implemented later
-  _mapFromCSV(String input){}
+  mapFromCSV(String input){}
   // getting data like /name1/data1/.../namex/datax
-  _mapFromSlashes(String input){
+  mapFromSlashes(String input){
     Map ret = new Map();
     int i = 0;
     String name;
@@ -185,7 +185,7 @@ abstract class InputStorageMethod extends GlobalDataRule {
   }
   // getting data like /?name1=data1&...&namex=datax
   // the leading /? is optional
-  _mapFromAndData(String input){
+  mapFromAndData(String input){
     if(input[0]=="?"){
       input = input.substring(1);
     }
@@ -198,7 +198,7 @@ abstract class InputStorageMethod extends GlobalDataRule {
   }
   // getting data like /[1]/[2]/.../[x]
   // returns map <number, value>
-  _mapFromPositionalData(String input){
+  mapFromPositionalData(String input){
     Map ret = new Map();
     int i = 0;
     input.split("/").forEach((stringPart){
@@ -209,15 +209,15 @@ abstract class InputStorageMethod extends GlobalDataRule {
   returnMap(List cookies, dynamic getData, String postData);
   getProcessingFunction(){
     if(this.inputFormat == InputFormat.JSON){
-      return _mapFromJSON;
+      return mapFromJSON;
     } else if(this.inputFormat == InputFormat.CSV){
-      return _mapFromCSV;
+      return mapFromCSV;
     } else if(this.inputFormat == InputFormat.AndData){
-      return _mapFromAndData;
+      return mapFromAndData;
     } else if(this.inputFormat == InputFormat.PositionalData){
-      return _mapFromPositionalData;
+      return mapFromPositionalData;
     } else if(this.inputFormat == InputFormat.Slashes){
-      return _mapFromSlashes;
+      return mapFromSlashes;
     }
   }
 }
@@ -225,19 +225,19 @@ abstract class InputStorageMethod extends GlobalDataRule {
 class GetData extends InputStorageMethod {
   const GetData (dynamic inputFormat) : super(inputFormat);
   returnMap(List cookies, dynamic getData, String postData){
-
+    // use getProcessingFunction here
   }
 }
-
+// to be implemented later
 class PostData extends InputStorageMethod {
   const PostData (dynamic inputFormat) : super(inputFormat);
   returnMap(List cookies, dynamic getData, String postData){
-
+    // use getProcessingFunction here
   }
 }
 
 class CookieData extends InputStorageMethod {
-  const CookieData (dynamic inputFormat) : super(inputFormat);
+  const CookieData () : super(InputFormat.Cookie);
   returnMap(List cookies, dynamic getData, String postData){
     Map<String, String> ret;
     cookies.forEach((Cookie cookie){
@@ -248,7 +248,8 @@ class CookieData extends InputStorageMethod {
 }
 // gets a class object which declares where to find data (get, post, cookie) and how to map it to a name used in a function
 class DataSources extends GlobalDataRule {
-  const DataSources(dynamic model) : super("DataSources", "");
+  final dynamic model;
+  const DataSources(this.model) : super("DataSources", "");
 }
 
 /* Helper Objects */

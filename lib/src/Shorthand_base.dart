@@ -72,9 +72,7 @@ class Shorthand {
             if(cm.instanceMembers[x]!=null){
               // it is a method, will pass method mirror instead
               m.addAll(
-                  mr.executeRule(objectMemberName, {"parameters": cm.instanceMembers[x].parameters, /*used to map get/post/cookie vars to inputs*/
-                                                    "instanceMirror": im, /*holds function*/
-                                                    "symbol": x /*how to find function in instanceMirror*/ }));
+                  mr.executeRule(objectMemberName, new EndPointHelperObject(cm.instanceMembers[x].parameters, im, x, da )));
             } else {
               // it is a string or some other special data type,
               // just pass the object, they'll know what to do

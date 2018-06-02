@@ -71,20 +71,85 @@ class EndPoint extends MapRule implements RuleBase {
   // obj is really a map of the params, the instance mirror,
   // and the symbol in the instance mirror
   Map transformData(var name, var obj) {
-    Map<String, dynamic> input = obj;
-    InstanceMirror im = reflect(input);
+    EndPointHelperObject input = obj;
+    bool hasCookie = false;
+    bool hasGet = false;
+    bool hasPost = false;
+    DataSources ds = null;
     // map the post/cookie/get data to the inputs of the function
+    for(ParameterMirror parameter in input.parameters){
+      if(parameter.metadata.length>0){
+        // there is metadata defining where to find the data, there should only be one
+        if(parameter.metadata[0] is CookieData){
+          hasCookie=true;
+        } else if(parameter.metadata[0] is GetData){
+          hasGet=true;
+        } else if(parameter.metadata[0] is PostData){
+          hasPost=true;
+        }
+      } else {
+        // there is no metadata defining where to find the data
+        // use the data sources object
+        if(ds==null){
+          for(dynamic data in input.da.aggregate.values){
+            if(data is DataSources){
+              ds = data;
+            }
+          }
+        }
+        if(ds == null){
+          print("parameter ${parameter.simpleName} in ${input.symbol} lacks a data input source. Please define in line or create a global DataSources variable");
+          exit(0);
+        }
+        //
+      }
+    }
     // build the function
     return {name: obj};
-
   }
 }
+// used in place of a map for the method to be passed
+class EndPointHelperObject{
+  List<ParameterMirror> parameters;
+  InstanceMirror im;
+  Symbol symbol;
+  DataAggregate da;
+  EndPointHelperObject(this.parameters, this.im, this.symbol, this.da);
+}
 
+// helper class for endpoint
+// takes in all functions to process data and run function
 class HttpRequestHandler{
-  List<Function> inputs; // list of functions which get parameters from get/post/cookie
-  InstanceMirror im; // instance mirror containing the function
-  Symbol s; // name of function to invoke from instancemirror
-  HttpRequestHandler(this.inputs, this.im, this.s);
+  // cookie, get, and post handling functions, transforms them into maps
+  // each has params function(List args, List cookies, List post)
+  List<Function> httpInputHandlers = new List();
+  // takes maps from above list and gets parts of data necessary for function
+  // each has params function(Map args, Map cookies, Map post)
+  List<Function> inputHandlers = new List();
+  Symbol symbol; // symbol of object to be invoked from instance mirror
+  Function handledFunction; // invoke function from instance mirror
+
+  HttpRequestHandler(this.symbol, this.handledFunction);
+
+  addHandlers(Function httpInputHandler, Function inputHandler){
+    httpInputHandlers.add(httpInputHandler);
+    inputHandlers.add(inputHandler);
+  }
+
+  executeRequest(List args, List cookies){
+    // get the processed cookies, get, and post data
+    List<Map> maps = new List();
+    for(Function httpInputHandler in httpInputHandlers){
+      maps.add(httpInputHandler(args, cookies));
+    }
+    // send processed data, getting data needed for request in order
+    List<dynamic> inputs = new List();
+    for(Function inputHandler in inputHandlers){
+      inputs.add(inputHandler(maps[0], maps[1]));
+    }
+    // return function
+    return handledFunction(symbol, inputs);
+  }
 }
 
 // used for static content, mainly strings to be served
