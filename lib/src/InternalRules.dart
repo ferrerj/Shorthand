@@ -76,24 +76,32 @@ class EndPoint extends MapRule implements RuleBase {
     bool hasGet = false;
     bool hasPost = false;
     DataSources ds = null;
+    List<Function> httpInputHandlers;
+    List<Function> inputHandlers;
     // map the post/cookie/get data to the inputs of the function
     for(ParameterMirror parameter in input.parameters){
       if(parameter.metadata.length>0){
         // there is metadata defining where to find the data, there should only be one
-        if(parameter.metadata[0] is CookieData){
+        if(parameter.metadata[0] is From) {
+          From f = parameter.metadata[0].reflectee;
+          inputHandlers.add(f.getFunction(name));
+        }
+        if(parameter.metadata[0] is FromCookie){
           hasCookie=true;
-        } else if(parameter.metadata[0] is GetData){
+          // add cookie getting function f
+        } else if(parameter.metadata[0] is FromGet){
           hasGet=true;
-        } else if(parameter.metadata[0] is PostData){
+        } else if(parameter.metadata[0] is FromPost){
           hasPost=true;
         }
       } else {
         // there is no metadata defining where to find the data
-        // use the data sources object
+        // use the data sources object to find if there are any defined there
         if(ds==null){
           for(dynamic data in input.da.aggregate.values){
             if(data is DataSources){
               ds = data;
+              break;
             }
           }
         }
@@ -103,9 +111,48 @@ class EndPoint extends MapRule implements RuleBase {
         }
         //
       }
+      if(hasCookie){
+        // special cookie allows for custom made CookieData types
+        // if it doesn't exist and the programmer doesn't want anything fancy
+        // just use a regular old CookieData, doesn't have anything special in it
+        CookieData specialCookie = null;
+        for(dynamic data in input.da.aggregate.values){
+          if(data is CookieData){
+            specialCookie = data;
+          }
+        }
+        if(specialCookie==null){
+          httpInputHandlers.add((new CookieData()).returnMap);
+        } else {
+          httpInputHandlers.add(specialCookie.returnMap);
+        }
+      } else {
+        httpInputHandlers.add((new CookieData()).blankMap);
+      }
+      if(hasGet){
+        for(dynamic data in input.da.aggregate.values){
+          if(data is GetData){
+            httpInputHandlers.add(data.returnMap);
+            break;
+          }
+        }
+      } else {
+        httpInputHandlers.add((new CookieData()).blankMap);
+      }
+      if(hasPost){
+        for(dynamic data in input.da.aggregate.values){
+          if(data is PostData){
+            httpInputHandlers.add(data.returnMap);
+            break;
+          }
+        }
+      } else {
+        httpInputHandlers.add((new CookieData()).blankMap);
+      }
     }
     // build the function
-    return {name: obj};
+    HttpRequestHandler hrh = new HttpRequestHandler(input.symbol, input.im, httpInputHandlers, inputHandlers);
+    return {name: hrh.executeRequest};
   }
 }
 // used in place of a map for the method to be passed
@@ -127,20 +174,14 @@ class HttpRequestHandler{
   // each has params function(Map args, Map cookies, Map post)
   List<Function> inputHandlers = new List();
   Symbol symbol; // symbol of object to be invoked from instance mirror
-  Function handledFunction; // invoke function from instance mirror
+  InstanceMirror im; // invoke function from instance mirror
+  HttpRequestHandler(this.symbol, this.im, this.httpInputHandlers, this.inputHandlers);
 
-  HttpRequestHandler(this.symbol, this.handledFunction);
-
-  addHandlers(Function httpInputHandler, Function inputHandler){
-    httpInputHandlers.add(httpInputHandler);
-    inputHandlers.add(inputHandler);
-  }
-
-  executeRequest(List args, List cookies){
+  executeRequest(List cookies, String get, String post){
     // get the processed cookies, get, and post data
     List<Map> maps = new List();
     for(Function httpInputHandler in httpInputHandlers){
-      maps.add(httpInputHandler(args, cookies));
+      maps.add(httpInputHandler(cookies, get, post));
     }
     // send processed data, getting data needed for request in order
     List<dynamic> inputs = new List();
@@ -148,7 +189,7 @@ class HttpRequestHandler{
       inputs.add(inputHandler(maps[0], maps[1]));
     }
     // return function
-    return handledFunction(symbol, inputs);
+    return im.invoke(symbol, inputs);
   }
 }
 

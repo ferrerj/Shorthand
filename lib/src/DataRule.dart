@@ -206,7 +206,7 @@ abstract class InputStorageMethod extends GlobalDataRule {
     });
     return ret;
   }
-  returnMap(List cookies, dynamic getData, String postData);
+  Map returnMap(List cookies, String getData, String postData);
   getProcessingFunction(){
     if(this.inputFormat == InputFormat.JSON){
       return mapFromJSON;
@@ -220,30 +220,80 @@ abstract class InputStorageMethod extends GlobalDataRule {
       return mapFromSlashes;
     }
   }
+  // this is just here in case there is nothing to get... less processing power required
+  Map blankMap(List cookies, String getData, String postData){
+    return {};
+  }
 }
 
 class GetData extends InputStorageMethod {
   const GetData (dynamic inputFormat) : super(inputFormat);
-  returnMap(List cookies, dynamic getData, String postData){
+  returnMap(List cookies, String getData, String postData){
     // use getProcessingFunction here
   }
 }
 // to be implemented later
 class PostData extends InputStorageMethod {
   const PostData (dynamic inputFormat) : super(inputFormat);
-  returnMap(List cookies, dynamic getData, String postData){
+  returnMap(List cookies, String getData, String postData){
     // use getProcessingFunction here
   }
 }
 
 class CookieData extends InputStorageMethod {
   const CookieData () : super(InputFormat.Cookie);
-  returnMap(List cookies, dynamic getData, String postData){
+  returnMap(List cookies, String getData, String postData){
     Map<String, String> ret;
     cookies.forEach((Cookie cookie){
       ret[cookie.name] = cookie.value;
     });
     return ret;
+  }
+}
+
+enum InputType {COOKIE, POST, GET}
+
+class From{
+  final InputType ip;
+  const From(this.ip);
+  Function getFunction(String varName){
+    Getter getter = new Getter(varName);
+    return getter.dataGetter(this.ip);
+  }
+}
+
+class FromGet extends From{
+  const FromGet() : super(InputType.GET);
+}
+
+class FromPost extends From{
+  const FromPost() : super(InputType.POST);
+}
+
+class FromCookie extends From{
+  const FromCookie() : super(InputType.COOKIE);
+}
+
+class Getter{
+  String varName;
+  Getter(this.varName);
+  Function dataGetter(InputType ip){
+    if(ip==InputType.COOKIE){
+      return getCookie;
+    } else if(ip==InputType.GET){
+      return getGet;
+    } else if(ip==InputType.POST){
+      return getPost;
+    }
+  }
+  getCookie(Map cookie, Map get, Map post){
+    return cookie[varName];
+  }
+  getPost(Map cookie, Map get, Map post){
+    return post[varName];
+  }
+  getGet(Map cookie, Map get, Map post){
+    return get[varName];
   }
 }
 // gets a class object which declares where to find data (get, post, cookie) and how to map it to a name used in a function
