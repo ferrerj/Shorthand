@@ -56,7 +56,6 @@ class Shorthand {
     for (Symbol x in ll) {
       String objectMemberName =
           x.toString().substring(8, x.toString().length - 2);
-      print(objectMemberName);
       // stores external/data rules to be iterated over later
       DataAggregate da = new DataAggregate();
       ExternalRuleAggregate era = new ExternalRuleAggregate();
@@ -68,7 +67,7 @@ class Shorthand {
         if (annotation.reflectee is RuleBase) {
           if (annotation.reflectee is MapRule) {
             MapRule mr = annotation.reflectee;
-            if(cm.instanceMembers[x]!=null){
+            if(im.getField(x).reflectee is Function){
               // it is a method, will pass method mirror instead
               m.addAll(
                   mr.executeRule(objectMemberName, new EndPointHelperObject(cm.instanceMembers[x].parameters, im, x, da )));

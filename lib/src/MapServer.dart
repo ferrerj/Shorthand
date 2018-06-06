@@ -99,7 +99,15 @@ class MapServer {
         // route.sublist(level) gets all params after the routing and passes them as a list
         // cookies, passes the cookies
         // still need to find way to get post data.
-        return useThisMap[route[level]](route.sublist(level), cookies);
+        String get = "";
+        for(String data in route.sublist(level)){
+          if(get==""){
+            get=data;
+          } else {
+            get="$get/$data";
+          }
+        }
+        return useThisMap[route[level]](cookies, get, "");
       }
     }
   }

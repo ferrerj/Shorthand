@@ -76,8 +76,8 @@ class EndPoint extends MapRule implements RuleBase {
     bool hasGet = false;
     bool hasPost = false;
     DataSources ds = null;
-    List<Function> httpInputHandlers;
-    List<Function> inputHandlers;
+    List<Function> httpInputHandlers = new List();
+    List<Function> inputHandlers = new List();
     // map the post/cookie/get data to the inputs of the function
     for(ParameterMirror parameter in input.parameters){
       if(parameter.metadata.length>0){
@@ -127,17 +127,18 @@ class EndPoint extends MapRule implements RuleBase {
           httpInputHandlers.add(specialCookie.returnMap);
         }
       } else {
-        httpInputHandlers.add((new CookieData()).blankMap);
+        httpInputHandlers.add((a, b, c)=> {});
       }
       if(hasGet){
         for(dynamic data in input.da.aggregate.values){
           if(data is GetData){
+            print(data);
             httpInputHandlers.add(data.returnMap);
             break;
           }
         }
       } else {
-        httpInputHandlers.add((new CookieData()).blankMap);
+        httpInputHandlers.add((a, b, c)=> {});
       }
       if(hasPost){
         for(dynamic data in input.da.aggregate.values){
@@ -147,7 +148,7 @@ class EndPoint extends MapRule implements RuleBase {
           }
         }
       } else {
-        httpInputHandlers.add((new CookieData()).blankMap);
+        httpInputHandlers.add((a, b, c)=> {});
       }
     }
     // build the function
@@ -186,7 +187,7 @@ class HttpRequestHandler{
     // send processed data, getting data needed for request in order
     List<dynamic> inputs = new List();
     for(Function inputHandler in inputHandlers){
-      inputs.add(inputHandler(maps[0], maps[1]));
+      inputs.add(inputHandler(maps[0], maps[1], maps[2]));
     }
     // return function
     return im.invoke(symbol, inputs);
@@ -218,7 +219,7 @@ class StringReturner {
 
   StringReturner(String this.input);
 
-  String getString(List args, List cookies) {
+  String getString(List cookies, String getData, String postData) {
     return this.input;
   }
 }

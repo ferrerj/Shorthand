@@ -54,7 +54,7 @@ abstract class ExternalRule extends RuleBase {
       optionalData.forEach((option) {
         if (!da.aggregate.containsKey(option)) {
           if (option == null) return null;
-          print(currentMirrorSystem().libraries);
+          //print(currentMirrorSystem().libraries);
           ClassMirror cm = currentMirrorSystem()
               .findLibrary(new Symbol("Shorthand_base"))
               .declarations[new Symbol(option)];

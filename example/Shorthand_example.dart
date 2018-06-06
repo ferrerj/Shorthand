@@ -15,6 +15,7 @@ home(List args, List cookies) {
 }
 
 @HostName("http://192.168.1.19")
+@PostData(InputFormat.AndData)
 class TestClass {
   // should be skipped
   var test;
@@ -24,7 +25,7 @@ class TestClass {
   @Output(const ["name"], const ["id"])
   @FlowTo("Songs")
   @EndPoint()
-  artists(List args, List cookies) {
+  artists() {
     Map<int, String> artistList = {
       1: "Of Monsters and Men",
       2: "The Lumineers",
@@ -43,8 +44,8 @@ class TestClass {
   @Input(const ["id"])
   @Output(const ["title"], const ["id"])
   @EndPoint()
-  songs(List args, List cookies) {
-    int idNo = args[0] - 1; // there should only be one arg
+  songs(@FromGet() dynamic id) {
+    int idNo = int.parse(id);
     List songLib = [
       {1: "Little Talks", 2: "Mountain Sound", 3: "Dirty Paws"},
       {4: "Ho Hey", 5: "Ophelia", 6: "Flowers In Your Hair"},

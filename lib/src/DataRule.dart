@@ -208,6 +208,7 @@ abstract class InputStorageMethod extends GlobalDataRule {
   }
   Map returnMap(List cookies, String getData, String postData);
   getProcessingFunction(){
+    print("format: ${this.inputFormat}");
     if(this.inputFormat == InputFormat.JSON){
       return mapFromJSON;
     } else if(this.inputFormat == InputFormat.CSV){
@@ -230,13 +231,14 @@ class GetData extends InputStorageMethod {
   const GetData (dynamic inputFormat) : super(inputFormat);
   returnMap(List cookies, String getData, String postData){
     // use getProcessingFunction here
+    return getProcessingFunction()(cookies, getData, postData);
   }
 }
 // to be implemented later
 class PostData extends InputStorageMethod {
   const PostData (dynamic inputFormat) : super(inputFormat);
   returnMap(List cookies, String getData, String postData){
-    // use getProcessingFunction here
+    return {};
   }
 }
 
@@ -252,7 +254,7 @@ class CookieData extends InputStorageMethod {
 }
 
 enum InputType {COOKIE, POST, GET}
-
+// classes used to describe where input variabls are from
 class From{
   final InputType ip;
   const From(this.ip);
@@ -273,7 +275,7 @@ class FromPost extends From{
 class FromCookie extends From{
   const FromCookie() : super(InputType.COOKIE);
 }
-
+// helper class which holds the variable name to be gotten when called in function
 class Getter{
   String varName;
   Getter(this.varName);
