@@ -100,7 +100,7 @@ class MapServer {
         // cookies, passes the cookies
         // still need to find way to get post data.
         String get = "";
-        for(String data in route.sublist(level)){
+        for(String data in route.sublist(level+1)){
           if(get==""){
             get=data;
           } else {

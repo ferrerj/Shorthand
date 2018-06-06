@@ -72,26 +72,30 @@ class EndPoint extends MapRule implements RuleBase {
   // and the symbol in the instance mirror
   Map transformData(var name, var obj) {
     EndPointHelperObject input = obj;
+    print(input.da.aggregate);
     bool hasCookie = false;
     bool hasGet = false;
     bool hasPost = false;
     DataSources ds = null;
     List<Function> httpInputHandlers = new List();
     List<Function> inputHandlers = new List();
+    print("$name");
     // map the post/cookie/get data to the inputs of the function
     for(ParameterMirror parameter in input.parameters){
       if(parameter.metadata.length>0){
         // there is metadata defining where to find the data, there should only be one
-        if(parameter.metadata[0] is From) {
+        print(parameter.metadata[0].reflectee is From);
+        if(parameter.metadata[0].reflectee is From) {
+          print("found from");
           From f = parameter.metadata[0].reflectee;
           inputHandlers.add(f.getFunction(name));
         }
-        if(parameter.metadata[0] is FromCookie){
+        if(parameter.metadata[0].reflectee is FromCookie){
           hasCookie=true;
           // add cookie getting function f
-        } else if(parameter.metadata[0] is FromGet){
+        } else if(parameter.metadata[0].reflectee is FromGet){
           hasGet=true;
-        } else if(parameter.metadata[0] is FromPost){
+        } else if(parameter.metadata[0].reflectee is FromPost){
           hasPost=true;
         }
       } else {
@@ -125,30 +129,36 @@ class EndPoint extends MapRule implements RuleBase {
           httpInputHandlers.add((new CookieData()).returnMap);
         } else {
           httpInputHandlers.add(specialCookie.returnMap);
+          print(httpInputHandlers.length);
         }
       } else {
         httpInputHandlers.add((a, b, c)=> {});
+        print(httpInputHandlers.length);
       }
       if(hasGet){
         for(dynamic data in input.da.aggregate.values){
           if(data is GetData){
             print(data);
             httpInputHandlers.add(data.returnMap);
+            print(httpInputHandlers.length);
             break;
           }
         }
       } else {
         httpInputHandlers.add((a, b, c)=> {});
+        print(httpInputHandlers.length);
       }
       if(hasPost){
         for(dynamic data in input.da.aggregate.values){
           if(data is PostData){
             httpInputHandlers.add(data.returnMap);
+            print(httpInputHandlers.length);
             break;
           }
         }
       } else {
         httpInputHandlers.add((a, b, c)=> {});
+        print(httpInputHandlers.length);
       }
     }
     // build the function
@@ -185,10 +195,13 @@ class HttpRequestHandler{
       maps.add(httpInputHandler(cookies, get, post));
     }
     // send processed data, getting data needed for request in order
+    print("mapped data: $maps");
     List<dynamic> inputs = new List();
     for(Function inputHandler in inputHandlers){
+      print(inputHandler);
       inputs.add(inputHandler(maps[0], maps[1], maps[2]));
     }
+    print(inputs);
     // return function
     return im.invoke(symbol, inputs);
   }

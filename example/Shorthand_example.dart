@@ -15,7 +15,7 @@ home(List args, List cookies) {
 }
 
 @HostName("http://192.168.1.19")
-@PostData(InputFormat.AndData)
+@GetData(InputFormat.AndData)
 class TestClass {
   // should be skipped
   var test;

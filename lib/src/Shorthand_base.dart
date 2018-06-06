@@ -45,7 +45,7 @@ class Shorthand {
     InstanceMirror im = reflect(obj);
     ClassMirror cm = im.type;
     cm.metadata.forEach((metadata) {
-      if (nameOfTheClass(metadata.type.superclass) == "GlobalDataRule") {
+      if (metadata.reflectee is GlobalDataRule) {
         globals.addToAggregate({nameOfTheThing(metadata): metadata.reflectee});
       }
     });
@@ -67,6 +67,7 @@ class Shorthand {
         if (annotation.reflectee is RuleBase) {
           if (annotation.reflectee is MapRule) {
             MapRule mr = annotation.reflectee;
+            da.addToAggregate(globals.aggregate);
             if(im.getField(x).reflectee is Function){
               // it is a method, will pass method mirror instead
               m.addAll(

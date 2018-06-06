@@ -231,7 +231,7 @@ class GetData extends InputStorageMethod {
   const GetData (dynamic inputFormat) : super(inputFormat);
   returnMap(List cookies, String getData, String postData){
     // use getProcessingFunction here
-    return getProcessingFunction()(cookies, getData, postData);
+    return (getProcessingFunction())(getData);
   }
 }
 // to be implemented later
@@ -246,7 +246,7 @@ class CookieData extends InputStorageMethod {
   const CookieData () : super(InputFormat.Cookie);
   returnMap(List cookies, String getData, String postData){
     Map<String, String> ret;
-    cookies.forEach((Cookie cookie){
+    cookies.forEach((cookie){
       ret[cookie.name] = cookie.value;
     });
     return ret;
