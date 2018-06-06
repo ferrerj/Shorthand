@@ -295,6 +295,8 @@ class Getter{
     return post[varName];
   }
   getGet(Map cookie, Map get, Map post){
+    print(varName);
+    print(get[varName]);
     return get[varName];
   }
 }

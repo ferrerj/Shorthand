@@ -20,10 +20,10 @@ class TestClass {
   // should be skipped
   var test;
 
-  @InternetList("Artists")
   @Input(const [])
   @Output(const ["name"], const ["id"])
   @FlowTo("Songs")
+  @InternetList("Artists")
   @EndPoint()
   artists() {
     Map<int, String> artistList = {
@@ -40,9 +40,9 @@ class TestClass {
     return returnVal;
   }
 
-  @InternetList("Songs")
   @Input(const ["id"])
   @Output(const ["title"], const ["id"])
+  @InternetList("Songs")
   @EndPoint()
   songs(@FromGet() dynamic id) {
     int idNo = int.parse(id);

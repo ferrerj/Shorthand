@@ -68,6 +68,11 @@ class EndPoint extends MapRule implements RuleBase {
 
   const EndPoint();
 
+  String nameOfTheSymbol(Symbol s) {
+    return s.toString()
+        .substring(8, s.toString().length - 2);
+  }
+
   // obj is really a map of the params, the instance mirror,
   // and the symbol in the instance mirror
   Map transformData(var name, var obj) {
@@ -88,7 +93,7 @@ class EndPoint extends MapRule implements RuleBase {
         if(parameter.metadata[0].reflectee is From) {
           print("found from");
           From f = parameter.metadata[0].reflectee;
-          inputHandlers.add(f.getFunction(name));
+          inputHandlers.add(f.getFunction(nameOfTheSymbol(parameter.simpleName)));
         }
         if(parameter.metadata[0].reflectee is FromCookie){
           hasCookie=true;
@@ -203,7 +208,7 @@ class HttpRequestHandler{
     }
     print(inputs);
     // return function
-    return im.invoke(symbol, inputs);
+    return im.invoke(symbol, inputs).reflectee;
   }
 }
 
