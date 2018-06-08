@@ -76,7 +76,7 @@ class Shorthand {
               // it is a string or some other special data type,
               // just pass the object, they'll know what to do
               m.addAll(
-                  mr.executeRule(objectMemberName, im.getField(x).reflectee));
+                  mr.executeRule(objectMemberName, im.getField(x).reflectee, da));
             }
           } else if (annotation.reflectee is DataRule) {
             da.addToAggregate(
