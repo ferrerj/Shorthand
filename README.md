@@ -2,7 +2,7 @@
 
 Shorthand is a code generating meta-programming framework meant to facilitate building a front-end using basic information already in your server code.
 
-It is based around to major components: "rules" and MapServer.
+It is based around two major components: "rules" and MapServer.
 
 ## Rules
 
