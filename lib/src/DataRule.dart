@@ -208,7 +208,6 @@ abstract class InputStorageMethod extends GlobalDataRule {
   }
   Map returnMap(List cookies, String getData, String postData);
   getProcessingFunction(){
-    print("format: ${this.inputFormat}");
     if(this.inputFormat == InputFormat.JSON){
       return mapFromJSON;
     } else if(this.inputFormat == InputFormat.CSV){
@@ -295,8 +294,6 @@ class Getter{
     return post[varName];
   }
   getGet(Map cookie, Map get, Map post){
-    print(varName);
-    print(get[varName]);
     return get[varName];
   }
 }
@@ -304,6 +301,34 @@ class Getter{
 class DataSources extends GlobalDataRule {
   final dynamic model;
   const DataSources(this.model) : super("DataSources", "");
+
+  From findParamSourceByName(String name){
+    Symbol symbol = new Symbol(name);
+    InstanceMirror im = reflect(model);
+    ClassMirror cm = im.type;
+    if(!cm.instanceMembers.containsKey(symbol)){
+      return null;
+    } else {
+      for(InstanceMirror annotation in cm.declarations[symbol].metadata){
+        if(annotation.reflectee is From){
+          return annotation.reflectee;
+        }
+      }
+    }
+    return null;
+  }
+
+  Type findParamTypeByName(String name){
+    Symbol symbol = new Symbol(name);
+    InstanceMirror im = reflect(model);
+    ClassMirror cm = im.type;
+    if(cm.getField(symbol)==null){
+      return null;
+    } else {
+      return cm.instanceMembers[symbol].returnType.reflectedType;
+    }
+  }
+
 }
 
 /* Helper Objects */

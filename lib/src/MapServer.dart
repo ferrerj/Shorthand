@@ -91,7 +91,6 @@ class MapServer {
       } else if (useThisMap[route[level]] is Map) {
         // map found requires further routing
         // TODO: test sub maps more...
-        print("I need more routing");
         return findPage(route, cookies,
             level: level++, subMap: useThisMap[route[level]]);
       } else {
