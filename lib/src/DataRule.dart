@@ -352,6 +352,17 @@ class DataSources extends GlobalDataRule {
 
 }
 
+class DataBaseOptions{
+  final String optionsFile;
+  const DataBaseOptions(this.optionsFile);
+  /*
+  ConnectionPool getDB(){
+
+
+  }
+  */
+}
+
 /* Helper Objects */
 
 // non constant helper class to get all data points for a function

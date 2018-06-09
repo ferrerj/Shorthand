@@ -198,6 +198,9 @@ class HttpRequestHandler{
   HttpRequestHandler(this.symbol, this.im, this.httpInputHandlers, this.inputHandlers);
 
   executeRequest(List cookies, String get, String post){
+    if(inputHandlers==[]){
+      return im.invoke(symbol, []);
+    }
     // get the processed cookies, get, and post data
     List<Map> maps = new List();
     for(Function httpInputHandler in httpInputHandlers){
@@ -291,6 +294,9 @@ class StringModifier{
   StringModifier(this.string, this.names, this.httpInputHandlers, this.inputHandlers);
 
   executeRequest(List cookies, String get, String post){
+    if(inputHandlers==[]){
+      return string;
+    }
     String tempString = string;
     // get the processed cookies, get, and post data
     List<Map> maps = new List();

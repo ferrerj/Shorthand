@@ -31,8 +31,8 @@ class TestClass {
   // should be skipped
   var test;
 
-  @Input(const []) // tells internetlist what params it needs
-  @Output(const ["name"], const ["id"]) // tells internetlist what to expect
+  @Input(const []) // tells internetlist what params it needs, will be depricated soon
+  @Output(const ["name"], const ["id"]) // tells internetlist what to expect, will be depricated soon
   @FlowTo("Songs") // where the internetlist will lead next
   @InternetList("Artists") // generates flutter code titled artist which will pull data from this url
   @EndPoint()
@@ -57,6 +57,7 @@ class TestClass {
   @EndPoint()
   // FromGet here will override whatever source is declared in the DataSources
   // object, doing so is ill advised if you have sources set up already
+  // I will admit the code in this function is pretty lazy, I just wanted to prove it works
   songs(@FromGet() dynamic id) {
     int idNo = int.parse(id);
     List songLib = [
