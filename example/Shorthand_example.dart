@@ -2,6 +2,18 @@ import 'package:Shorthand/Shorthand.dart';
 
 import 'dart:io';
 
+/*
+Everything here works as intended, I have tried to comment as much as I can to
+avoid writing up documentation on all of it. So far only InputFormat.AndData has
+been fully tested as a URL param organization method. The code in the functions
+is admittedly lazy but that's not what I wanted to show here. I do plan on doing
+reworks in the future to fix earlier work done with less direction, specifically
+the code around the functions below which do not exist in a class to define 404s
+and home page, etc. Further, the flutter code generators could use work and only
+output to the command line at the moment, something that will be one of my more
+immediate focuses after getting SQL queries from strings to work.
+ */
+
 testPage() {
   return "Good Job!";
 }
@@ -10,7 +22,7 @@ pageNotFound() {
   return "Find a better page.";
 }
 
-home(List args, List cookies) {
+home(List cookies, String getData, String postData) {
   return "you are home";
 }
 // class for using dataSouces annotation
@@ -26,7 +38,7 @@ class LookUp{
 
 @DataSources(const LookUp())
 @HostName("http://192.168.1.19")
-@GetData(InputFormat.AndData)
+@GetData(InputFormat.AndData) // made up the name AndData, basically its /?param=val&param2=val2 format
 class TestClass {
   // should be skipped
   var test;
