@@ -98,12 +98,17 @@ class TestClass {
 
   @StaticContent()
   File testFile = new File("${Directory.current.path}\\example\\testfile.txt");
+
+  @DynamicString()
+  String testString = "ID no is {id}";
 }
 
 main() async {
   TestClass tc = new TestClass();
 
   Shorthand sh = new Shorthand(object: tc);
+
+  print(sh.generatedMap);
 
   var server = new MapServer(
       siteMap: sh.generatedMap, homePage: testPage, notFound: pageNotFound);

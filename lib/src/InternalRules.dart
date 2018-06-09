@@ -5,10 +5,10 @@ abstract class MapRule extends RuleBase {
   final List<String> allowedTypes =
       null; // we we can type check the data coming in, stored as strings
   Map transformData(
-      var name, var dataAdded); // here we transform the data, return a map
+      var name, var dataAdded, [DataAggregate da]); // here we transform the data, return a map
   // dataToBeAdded is whatever the variable/function being analyzed is
-  Map executeRule(var name, var dataToBeAdded) {
-    return transformData(name, dataToBeAdded);
+  Map executeRule(var name, var dataToBeAdded, [DataAggregate da]) {
+    return transformData(name, dataToBeAdded, da);
     /*
     if(allowedTypes.contains(structureName(dataToBeAdded))||allowedTypes.contains("Any")){
       // Using the word any will allow any structure to pass through the rule
@@ -29,7 +29,6 @@ abstract class MapRule extends RuleBase {
     } else {
       InstanceMirror im = reflect(struct);
       String ret = im.type.simpleName.toString();
-      print(ret);
       return ret.substring(8, ret.length - 2);
     }
   }
@@ -37,8 +36,49 @@ abstract class MapRule extends RuleBase {
   String funcName(var struct) {
     InstanceMirror im = reflect(struct);
 
-    print(im.type.qualifiedName);
     return im.toString();
+  }
+  List<Function> httpInputHandlerBuilder(bool hasCookie, bool hasGet, bool hasPost, DataAggregate da){
+    List<Function> httpInputHandlers = new List();
+    if(hasCookie){
+      // special cookie allows for custom made CookieData types
+      // if it doesn't exist and the programmer doesn't want anything fancy
+      // just use a regular old CookieData, doesn't have anything special in it
+      CookieData specialCookie = null;
+      for(dynamic data in da.aggregate.values){
+        if(data is CookieData){
+          specialCookie = data;
+        }
+      }
+      if(specialCookie==null){
+        httpInputHandlers.add((new CookieData()).returnMap);
+      } else {
+        httpInputHandlers.add(specialCookie.returnMap);
+      }
+    } else {
+      httpInputHandlers.add((a, b, c)=> {});
+    }
+    if(hasGet){
+      for(dynamic data in da.aggregate.values){
+        if(data is GetData){
+          httpInputHandlers.add(data.returnMap);
+          break;
+        }
+      }
+    } else {
+      httpInputHandlers.add((a, b, c)=> {});
+    }
+    if(hasPost){
+      for(dynamic data in da.aggregate.values){
+        if(data is PostData){
+          httpInputHandlers.add(data.returnMap);
+          break;
+        }
+      }
+    } else {
+      httpInputHandlers.add((a, b, c)=> {});
+    }
+    return httpInputHandlers;
   }
 }
 
@@ -50,7 +90,7 @@ class Route extends MapRule {
 
   const Route();
 
-  Map transformData(var name, var obj) {
+  Map transformData(var name, var obj, [DataAggregate da]) {
     if (obj is! Function) {
       // this would defeat the purpose
       Shorthand sh = new Shorthand(object: obj, currentRoute: "/$name");
@@ -75,7 +115,7 @@ class EndPoint extends MapRule implements RuleBase {
 
   // obj is really a map of the params, the instance mirror,
   // and the symbol in the instance mirror
-  Map transformData(var name, var obj) {
+  Map transformData(var name, var obj, [DataAggregate da]) {
     EndPointHelperObject input = obj;
     bool hasCookie = false;
     bool hasGet = false;
@@ -84,84 +124,52 @@ class EndPoint extends MapRule implements RuleBase {
     List<Function> httpInputHandlers = new List();
     List<Function> inputHandlers = new List();
     // map the post/cookie/get data to the inputs of the function
-    for(ParameterMirror parameter in input.parameters){
+    for(ParameterMirror parameter in input.parameters) {
       From paramSource = null;
-      if(parameter.metadata.length>0){
+      if (parameter.metadata.length > 0) {
         // there is metadata defining where to find the data, there should only be one
-        if(parameter.metadata[0].reflectee is From) {
+        if (parameter.metadata[0].reflectee is From) {
           paramSource = parameter.metadata[0].reflectee;
-          inputHandlers.add(paramSource.getFunction(nameOfTheSymbol(parameter.simpleName)));
+          inputHandlers.add(
+              paramSource.getFunction(nameOfTheSymbol(parameter.simpleName)));
         }
       } else {
         // there is no metadata defining where to find the data
         // use the data sources object to find if there are any defined there
-        if(ds==null){
-          for(dynamic data in input.da.aggregate.values){
-            if(data is DataSources){
+        if (ds == null) {
+          for (dynamic data in input.da.aggregate.values) {
+            if (data is DataSources) {
               ds = data;
               break;
             }
           }
         }
         // there is no source provided for the parameter and no datasource to draw from
-        if(ds == null){
-          print("parameter ${parameter.simpleName} in ${input.symbol} lacks a data input source. Please define in line or create a global DataSources variable");
+        if (ds == null) {
+          print("parameter ${parameter.simpleName} in ${input
+              .symbol} lacks a data input source. Please define in line or create a global DataSources variable");
           exit(0);
         }
-        paramSource = ds.findParamSourceByName(nameOfTheSymbol(parameter.simpleName));
-        if(paramSource==null){
-          print("parameter ${parameter.simpleName} in ${input.symbol} lacks a data input source. Please define in line or create a global DataSources variable");
+        paramSource =
+            ds.findParamSourceByName(nameOfTheSymbol(parameter.simpleName));
+        if (paramSource == null) {
+          print("parameter ${parameter.simpleName} in ${input
+              .symbol} lacks a data input source. Please define in line or create a global DataSources variable");
           exit(0);
         }
-        inputHandlers.add(paramSource.getFunction(nameOfTheSymbol(parameter.simpleName)));
+        inputHandlers.add(
+            paramSource.getFunction(nameOfTheSymbol(parameter.simpleName)));
         //
       }
-      if(paramSource is FromCookie){
-        hasCookie=true;
-      } else if(paramSource is FromGet){
-        hasGet=true;
-      } else if(paramSource is FromPost){
-        hasPost=true;
-      }
-      if(hasCookie){
-        // special cookie allows for custom made CookieData types
-        // if it doesn't exist and the programmer doesn't want anything fancy
-        // just use a regular old CookieData, doesn't have anything special in it
-        CookieData specialCookie = null;
-        for(dynamic data in input.da.aggregate.values){
-          if(data is CookieData){
-            specialCookie = data;
-          }
-        }
-        if(specialCookie==null){
-          httpInputHandlers.add((new CookieData()).returnMap);
-        } else {
-          httpInputHandlers.add(specialCookie.returnMap);
-        }
-      } else {
-        httpInputHandlers.add((a, b, c)=> {});
-      }
-      if(hasGet){
-        for(dynamic data in input.da.aggregate.values){
-          if(data is GetData){
-            httpInputHandlers.add(data.returnMap);
-            break;
-          }
-        }
-      } else {
-        httpInputHandlers.add((a, b, c)=> {});
-      }
-      if(hasPost){
-        for(dynamic data in input.da.aggregate.values){
-          if(data is PostData){
-            httpInputHandlers.add(data.returnMap);
-            break;
-          }
-        }
-      } else {
-        httpInputHandlers.add((a, b, c)=> {});
+      if (paramSource is FromCookie) {
+        hasCookie = true;
+      } else if (paramSource is FromGet) {
+        hasGet = true;
+      } else if (paramSource is FromPost) {
+        hasPost = true;
       }
     }
+    httpInputHandlers = httpInputHandlerBuilder(hasCookie, hasGet, hasPost, input.da);
     // build the function
     HttpRequestHandler hrh = new HttpRequestHandler(input.symbol, input.im, httpInputHandlers, inputHandlers);
     return {name: hrh.executeRequest};
@@ -212,7 +220,7 @@ class StaticContent extends MapRule {
 
   const StaticContent();
 
-  Map transformData(var name, var obj) {
+  Map transformData(var name, var obj, [DataAggregate da]) {
     // need to write code to get the getString code from string returner
     if (obj is String) {
       StringReturner sr = new StringReturner(obj);
@@ -235,13 +243,82 @@ class StringReturner {
   }
 }
 
+class DynamicString extends MapRule{
+  const DynamicString();
+
+  // obj is a string, name is the name of the string
+  Map transformData(var name, var obj, [DataAggregate da]) {
+    String string = obj;
+    bool hasCookie = false;
+    bool hasGet = false;
+    bool hasPost = false;
+    List<Function> httpInputHandlers = new List();
+    List<Function> inputHandlers = new List();
+    List<String> names = new List();
+    for(DataRule dr in da.aggregate.values){
+      if(dr is DataSources){
+        Map<String, From> sources = dr.findAllParamSources();
+        for(String source in sources.keys){
+          if(string.contains("{${source}}")){
+            names.add(source);
+            inputHandlers.add(sources[source].getFunction(source));
+            if (sources[source] is FromCookie) {
+              hasCookie = true;
+            } else if (sources[source] is FromGet) {
+              hasGet = true;
+            } else if (sources[source] is FromPost) {
+              hasPost = true;
+            }
+          }
+        }
+        httpInputHandlers = httpInputHandlerBuilder(hasCookie, hasGet, hasPost, da);
+        break;
+      }
+    }
+    return {name: (new StringModifier(string, names, httpInputHandlers, inputHandlers)).executeRequest};
+  }
+}
+
+class StringModifier{
+  // cookie, get, and post handling functions, transforms them into maps
+  // each has params function(List args, List cookies, List post)
+  List<Function> httpInputHandlers;
+  // takes maps from above list and gets parts of data necessary for function
+  // each has params function(Map args, Map cookies, Map post)
+  List<Function> inputHandlers;
+  List<String> names;
+  String string; // symbol of object to be invoked from instance mirror
+  StringModifier(this.string, this.names, this.httpInputHandlers, this.inputHandlers);
+
+  executeRequest(List cookies, String get, String post){
+    String tempString = string;
+    // get the processed cookies, get, and post data
+    List<Map> maps = new List();
+    for(Function httpInputHandler in httpInputHandlers){
+      maps.add(httpInputHandler(cookies, get, post));
+    }
+    // send processed data, getting data needed for request in order
+    List<dynamic> inputs = new List();
+    for(Function inputHandler in inputHandlers){
+      inputs.add(inputHandler(maps[0], maps[1], maps[2]));
+    }
+    if(inputs.length!=names.length){
+      return "";
+    }
+    for(int i = 0; i<names.length; i++){
+      tempString = tempString.replaceAll("{${names[i]}}", inputs[i]);
+    }
+    return tempString;
+  }
+}
+
 // to be implemented later, runs a legacy script through the terminal
 class LegacyScript extends MapRule {
   final dynamic executable;
 
   const LegacyScript(var this.executable);
 
-  Map transformData(var name, var obj) {
+  Map transformData(var name, var obj, [DataAggregate da]) {
     return {"": ""};
   }
 }

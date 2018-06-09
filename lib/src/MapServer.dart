@@ -80,7 +80,6 @@ class MapServer {
         print("I'm using the sub map");
         useThisMap = subMap;
       }
-      print(route.length);
       if (useThisMap[route[level]] == null) {
         // 404 not found
         if (nf is Function) {
