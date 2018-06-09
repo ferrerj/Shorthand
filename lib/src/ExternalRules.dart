@@ -65,6 +65,7 @@ abstract class ExternalRule extends RuleBase {
         }
       });
     }
+    print(processedTemplate.replaceAll("{ViewName}", this.viewName));
     return processedTemplate.replaceAll("{ViewName}", this.viewName);
   }
 }
