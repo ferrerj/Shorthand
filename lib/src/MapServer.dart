@@ -43,7 +43,7 @@ class MapServer {
     await for (HttpRequest request in requestServer) {
       print(request.uri.toString());
       request.response
-        ..write(this.findPage(request.uri.toString(), request.cookies))
+        ..write(await this.findPage(request.uri.toString(), request.cookies))
         ..close();
     }
   }
@@ -51,7 +51,7 @@ class MapServer {
   // level 0: base page
   // level 1: routing or a page
   // level 2+: routing found in a sub-site map
-  findPage(var route, var cookies, {int level, Map subMap}) {
+  findPage(var route, var cookies, {int level, Map subMap}) async {
     if (site == null && hp == null) {
       return "Please set me up!";
     } else if (site == null && hp is Function) {
@@ -105,7 +105,7 @@ class MapServer {
             get="$get/$data";
           }
         }
-        return useThisMap[route[level]](cookies, get, "");
+        return await useThisMap[route[level]](cookies, get, "");
       }
     }
   }

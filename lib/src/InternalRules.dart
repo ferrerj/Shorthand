@@ -362,7 +362,19 @@ class SQLCaller extends StringModifier{
       : super(string, names, httpInputHandlers, inputHandlers);
   Future runSQL(List cookies, String get, String post) async {
     String query = executeRequest(cookies, get, post);
-    return await pool.query(query);
+    List<Row> list = await pool.query(query).then((results)=>results.toList());
+    List<String> retVal = new List();
+    for(Row r in list){
+      String temp = r.toString().substring(8);
+      for(dynamic s in r){
+        temp = temp.replaceAll(s.toString(), '"${s.toString()}"');
+      }
+      temp = temp.replaceAll(":", '":');
+      temp = temp.replaceAll("{", '{"');
+      temp = temp.replaceAll(', ', ', "');
+      retVal.add(temp);
+    }
+    return retVal;
   }
 }
 

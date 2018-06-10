@@ -39,6 +39,7 @@ class LookUp{
 @DataSources(const LookUp())
 @HostName("http://192.168.1.19")
 @GetData(InputFormat.AndData) // made up the name AndData, basically its /?param=val&param2=val2 format
+@DataBaseOptions("example/connection.options")
 class TestClass {
   // should be skipped
   var test;
@@ -114,6 +115,11 @@ class TestClass {
 
   @DynamicString()
   String testString = "ID no is {id}";
+
+  @DynamicSQL()
+  String testSQL = "SELECT * "
+      "             FROM users "
+      "             WHERE id = {id};";
 }
 
 main() async {
