@@ -38,7 +38,7 @@ class MapServer {
 
   startServer() async {
     var requestServer =
-        await HttpServer.bind(InternetAddress.ANY_IP_V4, portNo);
+        await HttpServer.bind(InternetAddress.anyIPv4, portNo);
     print('listening on localhost, port ${requestServer.port}');
     await for (HttpRequest request in requestServer) {
       print(request.uri.toString());

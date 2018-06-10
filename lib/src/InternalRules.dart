@@ -249,6 +249,7 @@ class StringReturner {
 class DynamicString extends MapRule{
   const DynamicString();
 
+
   // obj is a string, name is the name of the string
   Map transformData(var name, var obj, [DataAggregate da]) {
     String string = obj;
@@ -315,6 +316,53 @@ class StringModifier{
       tempString = tempString.replaceAll("{${names[i]}}", inputs[i]);
     }
     return tempString;
+  }
+}
+
+class DynamicSQL extends MapRule{
+  const DynamicSQL();
+  @override
+  Map transformData(var name, var obj, [DataAggregate da]) {
+    String string = obj;
+    bool hasCookie = false;
+    bool hasGet = false;
+    bool hasPost = false;
+    List<Function> httpInputHandlers = new List();
+    List<Function> inputHandlers = new List();
+    List<String> names = new List();
+    ConnectionPool pool;
+    for(DataRule dr in da.aggregate.values){
+      if(dr is DataSources){
+        Map<String, From> sources = dr.findAllParamSources();
+        for(String source in sources.keys){
+          if(string.contains("{${source}}")){
+            names.add(source);
+            inputHandlers.add(sources[source].getFunction(source));
+            if (sources[source] is FromCookie) {
+              hasCookie = true;
+            } else if (sources[source] is FromGet) {
+              hasGet = true;
+            } else if (sources[source] is FromPost) {
+              hasPost = true;
+            }
+          }
+        }
+        httpInputHandlers = httpInputHandlerBuilder(hasCookie, hasGet, hasPost, da);
+      } else if(dr is DataBaseOptions){
+        pool = dr.getDB();
+      }
+    }
+    return {name: (new SQLCaller(string, names, httpInputHandlers, inputHandlers, pool)).runSQL};
+  }
+}
+
+class SQLCaller extends StringModifier{
+  ConnectionPool pool;
+  SQLCaller(String string, List<String> names, List<Function> httpInputHandlers, List<Function> inputHandlers, this.pool)
+      : super(string, names, httpInputHandlers, inputHandlers);
+  Future runSQL(List cookies, String get, String post) async {
+    String query = executeRequest(cookies, get, post);
+    return await pool.query(query);
   }
 }
 

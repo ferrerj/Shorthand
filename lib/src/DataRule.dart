@@ -352,15 +352,19 @@ class DataSources extends GlobalDataRule {
 
 }
 
-class DataBaseOptions{
+class DataBaseOptions extends GlobalDataRule{
   final String optionsFile;
-  const DataBaseOptions(this.optionsFile);
-  /*
+  const DataBaseOptions(this.optionsFile) : super("DataBaseOptions", "");
   ConnectionPool getDB(){
-
-
+    OptionsFile options = new OptionsFile(optionsFile);
+    String user = options.getString('user');
+    String password = options.getString('password');
+    int port = options.getInt('port', 3306);
+    String db = options.getString('db');
+    String host = options.getString('host', 'localhost');
+    return new ConnectionPool(
+        host: host, port: port, user: user, password: password, db: db, max: 1);
   }
-  */
 }
 
 /* Helper Objects */
