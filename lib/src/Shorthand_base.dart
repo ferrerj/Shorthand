@@ -75,6 +75,11 @@ class Shorthand {
               // it is a method, will pass method mirror instead
               m.addAll(
                   mr.executeRule(objectMemberName, new EndPointHelperObject(cm.instanceMembers[x].parameters, im, x, da )));
+              if(MapRule.dataRules!={}){
+                  print("Adding DataRule");
+                  da.addToAggregate(MapRule.dataRules);
+                  mr.clearDataRules();
+              }
             } else {
               // it is a string or some other special data type,
               // just pass the object, they'll know what to do

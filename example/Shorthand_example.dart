@@ -44,7 +44,6 @@ class TestClass {
   // should be skipped
   var test;
 
-  @Input(const []) // tells internetlist what params it needs, will be depricated soon
   @Output(const ["name"], const ["id"]) // tells internetlist what to expect, will be depricated soon
   @FlowTo("Songs") // where the internetlist will lead next
   @InternetList("Artists") // generates flutter code titled artist which will pull data from this url
@@ -64,7 +63,6 @@ class TestClass {
     return returnVal;
   }
   // manually declaring data source (cookie, get, post)
-  @Input(const ["id"])
   @Output(const ["title"], const ["id"])
   @InternetList("Songs")
   @EndPoint()
@@ -87,7 +85,6 @@ class TestClass {
     return returnVal;
   }
   // implying data souce from DataSources object
-  @Input(const ["id"])
   @Output(const ["title"], const ["id"])
   @InternetList("Songs")
   @EndPoint()

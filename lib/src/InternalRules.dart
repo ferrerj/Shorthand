@@ -4,6 +4,7 @@ part of Shorthand_base;
 abstract class MapRule extends RuleBase {
   final List<String> allowedTypes =
       null; // we we can type check the data coming in, stored as strings
+  static Map<String,DataRule> dataRules = new Map();
   Map transformData(
       var name, var dataAdded, [DataAggregate da]); // here we transform the data, return a map
   // dataToBeAdded is whatever the variable/function being analyzed is
@@ -17,6 +18,9 @@ abstract class MapRule extends RuleBase {
     } else {
       return {};
     }*/
+  }
+  clearDataRules(){
+    dataRules = new Map();
   }
 
   const MapRule();
@@ -123,9 +127,11 @@ class EndPoint extends MapRule implements RuleBase {
     DataSources ds = null;
     List<Function> httpInputHandlers = new List();
     List<Function> inputHandlers = new List();
+    List<String> inputNames = new List();
     // map the post/cookie/get data to the inputs of the function
     for(ParameterMirror parameter in input.parameters) {
       From paramSource = null;
+      inputNames.add(nameOfTheSymbol(parameter.simpleName));
       if (parameter.metadata.length > 0) {
         // there is metadata defining where to find the data, there should only be one
         if (parameter.metadata[0].reflectee is From) {
@@ -169,6 +175,7 @@ class EndPoint extends MapRule implements RuleBase {
         hasPost = true;
       }
     }
+    MapRule.dataRules.addAll({"Input":(new Input(inputNames))});
     httpInputHandlers = httpInputHandlerBuilder(hasCookie, hasGet, hasPost, input.da);
     // build the function
     HttpRequestHandler hrh = new HttpRequestHandler(input.symbol, input.im, httpInputHandlers, inputHandlers);
