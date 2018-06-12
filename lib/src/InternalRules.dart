@@ -23,6 +23,7 @@ abstract class MapRule extends RuleBase {
     dataRules = new Map();
   }
 
+
   const MapRule();
 
   // gets the name of the structure for structure checks
@@ -111,11 +112,6 @@ class EndPoint extends MapRule implements RuleBase {
   final List<String> allowedTypes = const ["Function"];
 
   const EndPoint();
-
-  String nameOfTheSymbol(Symbol s) {
-    return s.toString()
-        .substring(8, s.toString().length - 2);
-  }
 
   // obj is really a map of the params, the instance mirror,
   // and the symbol in the instance mirror

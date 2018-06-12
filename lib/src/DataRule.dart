@@ -302,11 +302,6 @@ class DataSources extends GlobalDataRule {
   final dynamic model;
   const DataSources(this.model) : super("DataSources", "");
 
-  String symbolName(Symbol symbol) {
-    return symbol.toString()
-        .substring(8, symbol.toString().length - 2);
-  }
-
   From findParamSourceByName(String name){
     Symbol symbol = new Symbol(name);
     InstanceMirror im = reflect(model);
@@ -342,7 +337,7 @@ class DataSources extends GlobalDataRule {
       if(cm.declarations[symbol].metadata.length>0){
         for(InstanceMirror i in cm.declarations[symbol].metadata){
           if(i.reflectee is From){
-            retVal[symbolName(symbol)] = i.reflectee;
+            retVal[nameOfTheSymbol(symbol)] = i.reflectee;
           }
         }
       }

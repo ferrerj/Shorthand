@@ -28,19 +28,6 @@ class Shorthand {
     }
   }
 
-  // returns the name of the object being analyzed
-  String nameOfTheThing(InstanceMirror im) {
-    return im.type.simpleName
-        .toString()
-        .substring(8, im.type.simpleName.toString().length - 2);
-  }
-
-  String nameOfTheClass(ClassMirror cm) {
-    return cm.simpleName
-        .toString()
-        .substring(8, cm.simpleName.toString().length - 2);
-  }
-
   objectToMap(var obj) {
     // used to get route metadata variables
     // flag for string to be turned into a function to be returned
@@ -49,7 +36,7 @@ class Shorthand {
     ClassMirror cm = im.type;
     cm.metadata.forEach((metadata) {
       if (metadata.reflectee is GlobalDataRule) {
-        globals.addToAggregate({nameOfTheThing(metadata): metadata.reflectee});
+        globals.addToAggregate({metadata.reflectee.nameOfTheSymbol(metadata.type.simpleName): metadata.reflectee});
       }
     });
     List ll = cm.declarations.keys.toList();
@@ -88,10 +75,10 @@ class Shorthand {
             }
           } else if (annotation.reflectee is DataRule) {
             da.addToAggregate(
-                {nameOfTheThing(annotation): annotation.reflectee});
+                {annotation.reflectee.nameOfTheSymbol(annotation.type.simpleName): annotation.reflectee});
           } else if (annotation.reflectee is ExternalRule) {
             era.addToAggregate(
-                {nameOfTheThing(annotation): annotation.reflectee});
+                {annotation.reflectee.nameOfTheSymbol(annotation.type.simpleName): annotation.reflectee});
           }
         }
       }

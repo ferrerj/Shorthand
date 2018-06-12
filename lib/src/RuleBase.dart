@@ -6,4 +6,9 @@ part of Shorthand_base;
 
 abstract class RuleBase {
   const RuleBase();
+
+  String nameOfTheSymbol(Symbol s) {
+    return s.toString()
+        .substring(8, s.toString().length - 2);
+  }
 }
