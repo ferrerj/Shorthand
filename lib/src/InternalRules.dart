@@ -129,9 +129,6 @@ class EndPoint extends MapRule implements RuleBase {
     for(ParameterMirror parameter in input.parameters) {
       From paramSource = null;
       inputNames.add(nameOfTheSymbol(parameter.simpleName));
-      print("-------------------");
-      print(parameter.type.reflectedType);
-      print("-------------------");
       if (parameter.metadata.length > 0) {
         // there is metadata defining where to find the data, there should only be one
         if (parameter.metadata[0].reflectee is From) {
@@ -167,6 +164,7 @@ class EndPoint extends MapRule implements RuleBase {
             paramSource.getFunction(nameOfTheSymbol(parameter.simpleName)));
         //
       }
+      inputParsers.add(getParser(parameter.type));
       if (paramSource is FromCookie) {
         hasCookie = true;
       } else if (paramSource is FromGet) {
@@ -178,7 +176,7 @@ class EndPoint extends MapRule implements RuleBase {
     MapRule.dataRules.addAll({"Input":(new Input(inputNames))});
     httpInputHandlers = httpInputHandlerBuilder(hasCookie, hasGet, hasPost, input.da);
     // build the function
-    HttpRequestHandler hrh = new HttpRequestHandler(input.symbol, input.im, httpInputHandlers, inputHandlers);
+    HttpRequestHandler hrh = new HttpRequestHandler(input.symbol, input.im, httpInputHandlers, inputHandlers, inputParsers);
     return {name: hrh.executeRequest};
   }
 
@@ -214,9 +212,11 @@ class EndPoint extends MapRule implements RuleBase {
           input = input.split("=")[0];
         }
         if(input.contains("(")){
+          // stops function injection
           input = input.split("(")[0];
         }
         if(input.indexOf("@")==0){
+          // stops variables from being used
           input = input.substring(1, input.length);
         }
         return input;
@@ -233,6 +233,10 @@ class EndPoint extends MapRule implements RuleBase {
           }
           return false;
         }
+      };
+    } else {
+      return (String input){
+        return input;
       };
     }
   }
@@ -255,9 +259,12 @@ class HttpRequestHandler{
   // takes maps from above list and gets parts of data necessary for function
   // each has params function(Map args, Map cookies, Map post)
   List<Function> inputHandlers = new List();
+  // takes each input and parses int, double, or bool
+  // also makes strings SQL safe so you don't have to.
+  List<Function> inputParsers = new List();
   Symbol symbol; // symbol of object to be invoked from instance mirror
   InstanceMirror im; // invoke function from instance mirror
-  HttpRequestHandler(this.symbol, this.im, this.httpInputHandlers, this.inputHandlers);
+  HttpRequestHandler(this.symbol, this.im, this.httpInputHandlers, this.inputHandlers, this.inputParsers);
 
   executeRequest(List cookies, String get, String post){
     if(inputHandlers==[]){
@@ -270,8 +277,13 @@ class HttpRequestHandler{
     }
     // send processed data, getting data needed for request in order
     List<dynamic> inputs = new List();
+    /*
     for(Function inputHandler in inputHandlers){
       inputs.add(inputHandler(maps[0], maps[1], maps[2]));
+    }
+    */
+    for(int x = 0; x<inputHandlers.length; x++){
+      inputs.add(inputParsers[x](inputHandlers[x](maps[0], maps[1], maps[2])));
     }
     // return function
     return im.invoke(symbol, inputs).reflectee;
