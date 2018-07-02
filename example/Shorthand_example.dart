@@ -33,7 +33,7 @@ class LookUp{
   // delcares that all parameters with name id which do not specify whether it
   // is from a cookie, get or post will be from a get.
   @FromGet()
-  final dynamic id;
+  final String id;
 }
 
 @DataSources(const LookUp())

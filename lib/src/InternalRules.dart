@@ -123,11 +123,15 @@ class EndPoint extends MapRule implements RuleBase {
     DataSources ds = null;
     List<Function> httpInputHandlers = new List();
     List<Function> inputHandlers = new List();
+    List<Function> inputParsers = new List(); // used to parse inputs to ints, doubles, floats, make SQL safe strings, etc.
     List<String> inputNames = new List();
     // map the post/cookie/get data to the inputs of the function
     for(ParameterMirror parameter in input.parameters) {
       From paramSource = null;
       inputNames.add(nameOfTheSymbol(parameter.simpleName));
+      print("-------------------");
+      print(parameter.type.reflectedType);
+      print("-------------------");
       if (parameter.metadata.length > 0) {
         // there is metadata defining where to find the data, there should only be one
         if (parameter.metadata[0].reflectee is From) {
@@ -176,6 +180,61 @@ class EndPoint extends MapRule implements RuleBase {
     // build the function
     HttpRequestHandler hrh = new HttpRequestHandler(input.symbol, input.im, httpInputHandlers, inputHandlers);
     return {name: hrh.executeRequest};
+  }
+
+  Function getParser(TypeMirror tm){
+    if(tm.reflectedType is int){
+      return (String input){
+        Match m = (new RegExp("(-)*[0-9]+")).firstMatch(input);
+        if(m.groupCount==0){
+          return null;
+        }
+        return int.parse(input.substring(m.start, m.end));
+      };
+    } else if(tm.reflectedType is double){
+      return (String input){
+        Match m = (new RegExp("(-)*[0-9]*(.)[0-9]*([eE][+-][0-9]+)*")).firstMatch(input);
+        if(m.groupCount==0){
+          return null;
+        }
+        return double.parse(input.substring(m.start, m.end));
+      };
+    } else if(tm.reflectedType is String) {
+      return (String input){
+        if(input.contains(";")){
+          input = input.split(";")[0];
+        }
+        if(input.contains("'")){
+          input = input.split("'")[0];
+        }
+        if(input.contains('"')){
+          input = input.split('"')[0];
+        }
+        if(input.contains("=")){
+          input = input.split("=")[0];
+        }
+        if(input.contains("(")){
+          input = input.split("(")[0];
+        }
+        if(input.indexOf("@")==0){
+          input = input.substring(1, input.length);
+        }
+        return input;
+      };
+    }else if(tm.reflectedType is bool){
+      return (String input){
+        Match m = (new RegExp("((true)|(false)|(t)|(f)|0|1)")).firstMatch(input.toLowerCase());
+        if(m.groupCount==0){
+          return null;
+        } else {
+          String result = input.substring(m.start, m.end);
+          if(result=="true"||result=="t"||result=="1"){
+            return true;
+          }
+          return false;
+        }
+      };
+    }
   }
 }
 // used in place of a map for the method to be passed
