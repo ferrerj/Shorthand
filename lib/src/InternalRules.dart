@@ -85,6 +85,67 @@ abstract class MapRule extends RuleBase {
     }
     return httpInputHandlers;
   }
+
+  Function getParser(TypeMirror tm){
+    if(tm.reflectedType is int){
+      return (String input){
+        Match m = (new RegExp("(-)*[0-9]+")).firstMatch(input);
+        if(m.groupCount==0){
+          return null;
+        }
+        return int.parse(input.substring(m.start, m.end));
+      };
+    } else if(tm.reflectedType is double){
+      return (String input){
+        Match m = (new RegExp("(-)*[0-9]*(.)[0-9]*([eE][+-][0-9]+)*")).firstMatch(input);
+        if(m.groupCount==0){
+          return null;
+        }
+        return double.parse(input.substring(m.start, m.end));
+      };
+    } else if(tm.reflectedType is String) {
+      return (String input){
+        if(input.contains(";")){
+          input = input.split(";")[0];
+        }
+        if(input.contains("'")){
+          input = input.split("'")[0];
+        }
+        if(input.contains('"')){
+          input = input.split('"')[0];
+        }
+        if(input.contains("=")){
+          input = input.split("=")[0];
+        }
+        if(input.contains("(")){
+          // stops function injection
+          input = input.split("(")[0];
+        }
+        if(input.indexOf("@")==0){
+          // stops variables from being used
+          input = input.substring(1, input.length);
+        }
+        return input;
+      };
+    }else if(tm.reflectedType is bool){
+      return (String input){
+        Match m = (new RegExp("((true)|(false)|(t)|(f)|0|1)")).firstMatch(input.toLowerCase());
+        if(m.groupCount==0){
+          return null;
+        } else {
+          String result = input.substring(m.start, m.end);
+          if(result=="true"||result=="t"||result=="1"){
+            return true;
+          }
+          return false;
+        }
+      };
+    } else {
+      return (String input){
+        return input;
+      };
+    }
+  }
 }
 
 // defines a new route
@@ -180,66 +241,6 @@ class EndPoint extends MapRule implements RuleBase {
     return {name: hrh.executeRequest};
   }
 
-  Function getParser(TypeMirror tm){
-    if(tm.reflectedType is int){
-      return (String input){
-        Match m = (new RegExp("(-)*[0-9]+")).firstMatch(input);
-        if(m.groupCount==0){
-          return null;
-        }
-        return int.parse(input.substring(m.start, m.end));
-      };
-    } else if(tm.reflectedType is double){
-      return (String input){
-        Match m = (new RegExp("(-)*[0-9]*(.)[0-9]*([eE][+-][0-9]+)*")).firstMatch(input);
-        if(m.groupCount==0){
-          return null;
-        }
-        return double.parse(input.substring(m.start, m.end));
-      };
-    } else if(tm.reflectedType is String) {
-      return (String input){
-        if(input.contains(";")){
-          input = input.split(";")[0];
-        }
-        if(input.contains("'")){
-          input = input.split("'")[0];
-        }
-        if(input.contains('"')){
-          input = input.split('"')[0];
-        }
-        if(input.contains("=")){
-          input = input.split("=")[0];
-        }
-        if(input.contains("(")){
-          // stops function injection
-          input = input.split("(")[0];
-        }
-        if(input.indexOf("@")==0){
-          // stops variables from being used
-          input = input.substring(1, input.length);
-        }
-        return input;
-      };
-    }else if(tm.reflectedType is bool){
-      return (String input){
-        Match m = (new RegExp("((true)|(false)|(t)|(f)|0|1)")).firstMatch(input.toLowerCase());
-        if(m.groupCount==0){
-          return null;
-        } else {
-          String result = input.substring(m.start, m.end);
-          if(result=="true"||result=="t"||result=="1"){
-            return true;
-          }
-          return false;
-        }
-      };
-    } else {
-      return (String input){
-        return input;
-      };
-    }
-  }
 }
 // used in place of a map for the method to be passed
 class EndPointHelperObject{
