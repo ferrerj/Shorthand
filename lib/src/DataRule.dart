@@ -318,14 +318,14 @@ class DataSources extends GlobalDataRule {
     return null;
   }
 
-  Type findParamTypeByName(String name){
+  TypeMirror findParamTypeByName(String name){
     Symbol symbol = new Symbol(name);
     InstanceMirror im = reflect(model);
     ClassMirror cm = im.type;
     if(cm.getField(symbol)==null){
       return null;
     } else {
-      return cm.instanceMembers[symbol].returnType.reflectedType;
+      return cm.instanceMembers[symbol].returnType;
     }
   }
 

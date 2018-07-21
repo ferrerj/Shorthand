@@ -334,6 +334,7 @@ class DynamicString extends MapRule{
     List<Function> httpInputHandlers = new List();
     List<Function> inputHandlers = new List();
     List<String> names = new List();
+    List<Function> inputParsers = new List();
     for(DataRule dr in da.aggregate.values){
       if(dr is DataSources){
         Map<String, From> sources = dr.findAllParamSources();
@@ -348,13 +349,14 @@ class DynamicString extends MapRule{
             } else if (sources[source] is FromPost) {
               hasPost = true;
             }
+            inputParsers.add(getParser(dr.findParamTypeByName(source)));
           }
         }
         httpInputHandlers = httpInputHandlerBuilder(hasCookie, hasGet, hasPost, da);
         break;
       }
     }
-    return {name: (new StringModifier(string, names, httpInputHandlers, inputHandlers)).executeRequest};
+    return {name: (new StringModifier(string, names, httpInputHandlers, inputHandlers, inputParsers)).executeRequest};
   }
 }
 
@@ -367,7 +369,8 @@ class StringModifier{
   List<Function> inputHandlers;
   List<String> names;
   String string; // symbol of object to be invoked from instance mirror
-  StringModifier(this.string, this.names, this.httpInputHandlers, this.inputHandlers);
+  List<Function> inputParsers;
+  StringModifier(this.string, this.names, this.httpInputHandlers, this.inputHandlers, this.inputParsers);
 
   executeRequest(List cookies, String get, String post){
     if(inputHandlers==[]){
@@ -388,7 +391,7 @@ class StringModifier{
       return "";
     }
     for(int i = 0; i<names.length; i++){
-      tempString = tempString.replaceAll("{${names[i]}}", inputs[i]);
+      tempString = tempString.replaceAll("{${names[i]}}", inputParsers[i](inputs[i]).toString());
     }
     return tempString;
   }
@@ -405,6 +408,7 @@ class DynamicSQL extends MapRule{
     List<Function> httpInputHandlers = new List();
     List<Function> inputHandlers = new List();
     List<String> names = new List();
+    List<Function> inputParsers = new List();
     ConnectionPool pool;
     for(DataRule dr in da.aggregate.values){
       if(dr is DataSources){
@@ -420,6 +424,7 @@ class DynamicSQL extends MapRule{
             } else if (sources[source] is FromPost) {
               hasPost = true;
             }
+            inputParsers.add(getParser(dr.findParamTypeByName(source)));
           }
         }
         httpInputHandlers = httpInputHandlerBuilder(hasCookie, hasGet, hasPost, da);
@@ -427,14 +432,14 @@ class DynamicSQL extends MapRule{
         pool = dr.getDB();
       }
     }
-    return {name: (new SQLCaller(string, names, httpInputHandlers, inputHandlers, pool)).runSQL};
+    return {name: (new SQLCaller(string, names, httpInputHandlers, inputHandlers, pool, inputParsers)).runSQL};
   }
 }
-
+// need to implement input parsers into string modifier
 class SQLCaller extends StringModifier{
   ConnectionPool pool;
-  SQLCaller(String string, List<String> names, List<Function> httpInputHandlers, List<Function> inputHandlers, this.pool)
-      : super(string, names, httpInputHandlers, inputHandlers);
+  SQLCaller(String string, List<String> names, List<Function> httpInputHandlers, List<Function> inputHandlers, this.pool, List<Function> inputParsers)
+      : super(string, names, httpInputHandlers, inputHandlers, inputParsers);
   Future runSQL(List cookies, String get, String post) async {
     String query = executeRequest(cookies, get, post);
     List<Row> list = await pool.query(query).then((results)=>results.toList());
@@ -444,9 +449,13 @@ class SQLCaller extends StringModifier{
       for(dynamic s in r){
         temp = temp.replaceAll(s.toString(), '"${s.toString()}"');
       }
+      /*
+      // no longer necessary, moved input parsing to the string modifyer class
+      // just keeping it here.... for reasons
       temp = temp.replaceAll(":", '":');
       temp = temp.replaceAll("{", '{"');
       temp = temp.replaceAll(', ', ', "');
+      */
       retVal.add(temp);
     }
     return retVal;
