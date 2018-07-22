@@ -10,44 +10,47 @@ is admittedly lazy but that's not what I wanted to show here. I do plan on doing
 reworks in the future to fix earlier work done with less direction, specifically
 the code around the functions below which do not exist in a class to define 404s
 and home page, etc. Further, the flutter code generators could use work and only
-output to the command line at the moment, something that will be one of my more
-immediate focuses after getting SQL queries from strings to work.
+output to the command line at the moment. Further in the near future I have plans
+for socket code using similar styling as below. Two important features currently
+needed are cookie/header annotations and HTTPS signing.
  */
 
+//temporary homepage example
 testPage() {
   return "Good Job!";
 }
-
+// temporary 404 example
 pageNotFound() {
   return "Find a better page.";
 }
 
-home(List cookies, String getData, String postData) {
-  return "you are home";
-}
 // class for using dataSouces annotation
 // list all params used in functions, then just call the class in a param for
 // the class being built, declaring where the data comes from
+
+// Warning will say final variables need to be initialized, but that's now how
+// we plan to use the object, so just ignore.
 class LookUp{
   const LookUp();
   // delcares that all parameters with name id which do not specify whether it
   // is from a cookie, get or post will be from a get.
   @FromGet()
-  final String id;
+  final int id;
 }
 
 @DataSources(const LookUp())
-@HostName("http://192.168.1.19")
+@HostName("http://192.168.1.19") // for flutter code generation
 @GetData(InputFormat.AndData) // made up the name AndData, basically its /?param=val&param2=val2 format
-@DataBaseOptions("example/connection.options")
+@DataBaseOptions("example/connection.options") // for database connections
 class TestClass {
   // should be skipped
   var test;
 
+  // no arg function
   @Output(const ["name"], const ["id"]) // tells internetlist what to expect, will be depricated soon
-  @FlowTo("Songs") // where the internetlist will lead next
+  @FlowTo("Songs") // where the internetlist will lead next (external rules only)
   @InternetList("Artists") // generates flutter code titled artist which will pull data from this url
-  @EndPoint()
+  @EndPoint() // tells the map server to build closure for request handling around this
   artists() {
     Map<int, String> artistList = {
       1: "Of Monsters and Men",
@@ -66,21 +69,19 @@ class TestClass {
   @Output(const ["title"], const ["id"])
   @InternetList("Songs")
   @EndPoint()
-  // FromGet here will override whatever source is declared in the DataSources
+  // FromGet here will override whatever source is declared in the DataSources (LookUp)
   // object, doing so is ill advised if you have sources set up already
-  // I will admit the code in this function is pretty lazy, I just wanted to prove it works
-  songs(@FromGet() dynamic id) {
-    int idNo = int.parse(id);
+  songs(@FromGet() int id) {
     List songLib = [
       {1: "Little Talks", 2: "Mountain Sound", 3: "Dirty Paws"},
       {4: "Ho Hey", 5: "Ophelia", 6: "Flowers In Your Hair"},
       {7: "Buddy Holly", 8: "Beverly Hills", 9: "Hash Pipe"}
     ];
     String returnVal = "[";
-    for (int i = 0; i < songLib[idNo].length; i++) {
-      returnVal = "$returnVal {\"id\" : \"${songLib[idNo].keys
-          .toList()[i]}\", \"title\" : \"${songLib[idNo].values
-          .toList()[i]}\"}${(i < songLib[idNo].length - 1) ? "," : "]"}";
+    for (int i = 0; i < songLib[id].length; i++) {
+      returnVal = "$returnVal {\"id\" : \"${songLib[id].keys
+          .toList()[i]}\", \"title\" : \"${songLib[id].values
+          .toList()[i]}\"}${(i < songLib[id].length - 1) ? "," : "]"}";
     }
     return returnVal;
   }
@@ -88,35 +89,42 @@ class TestClass {
   @Output(const ["title"], const ["id"])
   @InternetList("Songs")
   @EndPoint()
-  songsAgain(dynamic id) {
-    int idNo = int.parse(id);
+  songsAgain(int id) {
     List songLib = [
       {1: "Little Talks", 2: "Mountain Sound", 3: "Dirty Paws"},
       {4: "Ho Hey", 5: "Ophelia", 6: "Flowers In Your Hair"},
       {7: "Buddy Holly", 8: "Beverly Hills", 9: "Hash Pipe"}
     ];
     String returnVal = "[";
-    for (int i = 0; i < songLib[idNo].length; i++) {
-      returnVal = "$returnVal {\"id\" : \"${songLib[idNo].keys
-          .toList()[i]}\", \"title\" : \"${songLib[idNo].values
-          .toList()[i]}\"}${(i < songLib[idNo].length - 1) ? "," : "]"}";
+    for (int i = 0; i < songLib[id].length; i++) {
+      returnVal = "$returnVal {\"id\" : \"${songLib[id].keys
+          .toList()[i]}\", \"title\" : \"${songLib[id].values
+          .toList()[i]}\"}${(i < songLib[id].length - 1) ? "," : "]"}";
     }
     return returnVal;
   }
 
+  // StaticContent returns the content of a string or file which is stored in
+  // memory, don't go too crazy with this one
   @StaticContent()
   String temp = "You got StringReturner to work";
 
   @StaticContent()
   File testFile = new File("${Directory.current.path}\\example\\testfile.txt");
 
+  // Similar to StaticContent, only it will use member variables names of the
+  // DataSources (LookUp) object to build a closure around the function
   @DynamicString()
   String testString = "ID no is {id}";
 
+  // Similar to DynamicString, only after building the string below, it will
+  // query the database using the connections options provided in file provided
+  // to the DataBaseOptions declaration and returns the result as a JSON object
   @DynamicSQL()
   String testSQL = "SELECT * "
       "             FROM users "
       "             WHERE id = {id};";
+
 }
 
 main() async {
@@ -126,6 +134,6 @@ main() async {
 
   print(sh.generatedMap);
 
-  var server = new MapServer(
+  MapServer server = new MapServer(
       siteMap: sh.generatedMap, homePage: testPage, notFound: pageNotFound);
 }

@@ -322,7 +322,7 @@ class DataSources extends GlobalDataRule {
     Symbol symbol = new Symbol(name);
     InstanceMirror im = reflect(model);
     ClassMirror cm = im.type;
-    if(cm.getField(symbol)==null){
+    if(cm.instanceMembers[symbol]==null){
       return null;
     } else {
       return cm.instanceMembers[symbol].returnType;

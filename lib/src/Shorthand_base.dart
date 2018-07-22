@@ -63,7 +63,6 @@ class Shorthand {
               m.addAll(
                   mr.executeRule(objectMemberName, new EndPointHelperObject(cm.instanceMembers[x].parameters, im, x, da )));
               if(MapRule.dataRules!={}){
-                  print("Adding DataRule");
                   da.addToAggregate(MapRule.dataRules);
                   mr.clearDataRules();
               }

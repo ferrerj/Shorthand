@@ -449,13 +449,10 @@ class SQLCaller extends StringModifier{
       for(dynamic s in r){
         temp = temp.replaceAll(s.toString(), '"${s.toString()}"');
       }
-      /*
-      // no longer necessary, moved input parsing to the string modifyer class
-      // just keeping it here.... for reasons
+      // convert output to JSON
       temp = temp.replaceAll(":", '":');
       temp = temp.replaceAll("{", '{"');
       temp = temp.replaceAll(', ', ', "');
-      */
       retVal.add(temp);
     }
     return retVal;
