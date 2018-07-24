@@ -4,6 +4,7 @@ import 'dart:core';
 import 'dart:io';
 import 'dart:mirrors';
 import 'dart:async';
+import 'dart:convert';
 import 'package:sqljocky5/sqljocky.dart';
 import 'package:options_file/options_file.dart';
 

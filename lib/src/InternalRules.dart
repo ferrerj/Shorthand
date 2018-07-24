@@ -438,16 +438,19 @@ class DynamicSQL extends MapRule{
 // need to implement input parsers into string modifier
 class SQLCaller extends StringModifier{
   ConnectionPool pool;
+  JsonEncoder je = new JsonEncoder();
   SQLCaller(String string, List<String> names, List<Function> httpInputHandlers, List<Function> inputHandlers, this.pool, List<Function> inputParsers)
       : super(string, names, httpInputHandlers, inputHandlers, inputParsers);
   Future runSQL(List cookies, String get, String post) async {
     String query = executeRequest(cookies, get, post);
     List<Row> list = await pool.query(query).then((results)=>results.toList());
+    return je.convert(list).toString();
+    /*
     List<String> retVal = new List();
     for(Row r in list){
       String temp = r.toString().substring(8);
       for(dynamic s in r){
-        temp = temp.replaceAll(s.toString(), '"${s.toString()}"');
+        temp = temp.replaceAll(s.toString(), '${s.toString()}');
       }
       // convert output to JSON
       temp = temp.replaceAll(":", '":');
@@ -455,7 +458,9 @@ class SQLCaller extends StringModifier{
       temp = temp.replaceAll(', ', ', "');
       retVal.add(temp);
     }
+
     return retVal;
+    */
   }
 }
 
