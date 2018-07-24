@@ -448,7 +448,7 @@ class SQLCaller extends StringModifier{
     for(Row r in list){
       String temp = r.toString().substring(8);
       for(dynamic s in r){
-        temp = temp.replaceAll(s.toString(), '${s.toString()}');
+        temp = temp.replaceAll(s.toString(), '"${s.toString()}"');
       }
       // convert output to JSON
       temp = temp.replaceAll(":", '":');
