@@ -1,11 +1,11 @@
 name: Shorthand
 description: A starting point for Dart libraries or applications.
-version: 0.0.1
+version: 0.0.11
 #homepage: https://www.example.com
 #author: Eric <email@example.com>
 
 environment:
-  sdk: '>=1.20.1 <2.0.0'
+  sdk: '>=1.20.1 <=2.0.0'
 
 dependencies:
   sqljocky5: "1.0.0"

@@ -444,7 +444,7 @@ class SQLCaller extends StringModifier{
   Future runSQL(List cookies, String get, String post) async {
     String query = executeRequest(cookies, get, post);
     List<Row> list = await pool.query(query).then((results)=>results.toList());
-    return je.convert(list).toString();
+    return je.convert(list).replaceAll('""', '"');
     /*
     List<String> retVal = new List();
     for(Row r in list){
