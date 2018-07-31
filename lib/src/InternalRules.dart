@@ -2,22 +2,12 @@ part of Shorthand_base;
 
 // the rule to rule all (map/internal) rules
 abstract class MapRule extends RuleBase {
-  final List<String> allowedTypes =
-      null; // we we can type check the data coming in, stored as strings
   static Map<String,DataRule> dataRules = new Map();
   Map transformData(
       var name, var dataAdded, [DataAggregate da]); // here we transform the data, return a map
   // dataToBeAdded is whatever the variable/function being analyzed is
   Map executeRule(var name, var dataToBeAdded, [DataAggregate da]) {
     return transformData(name, dataToBeAdded, da);
-    /*
-    if(allowedTypes.contains(structureName(dataToBeAdded))||allowedTypes.contains("Any")){
-      // Using the word any will allow any structure to pass through the rule
-      print(executeRule(dataToBeAdded));
-      return transformData(dataToBeAdded);
-    } else {
-      return {};
-    }*/
   }
   clearDataRules(){
     dataRules = new Map();
@@ -152,8 +142,6 @@ abstract class MapRule extends RuleBase {
 // used to mark an object which is to be read into the route
 // name used will be the name of the structure, choose carefully
 class Route extends MapRule {
-  final List<String> allowedTypes = const ["Any"];
-
   const Route();
 
   Map transformData(var name, var obj, [DataAggregate da]) {
@@ -170,8 +158,6 @@ class Route extends MapRule {
 // used to mark a function which will serve as a point to hand a web page
 // number of variable inputs, types, and names can be grabbed from function
 class EndPoint extends MapRule implements RuleBase {
-  final List<String> allowedTypes = const ["Function"];
-
   const EndPoint();
 
   // obj is really a map of the params, the instance mirror,
@@ -294,8 +280,6 @@ class HttpRequestHandler{
 // used for static content, mainly strings to be served
 // essentially an end point with some black magic in the background to make it work
 class StaticContent extends MapRule {
-  final List<String> allowedTypes = const ["String"];
-
   const StaticContent();
 
   Map transformData(var name, var obj, [DataAggregate da]) {
@@ -443,20 +427,26 @@ class SQLCaller extends StringModifier{
       : super(string, names, httpInputHandlers, inputHandlers, inputParsers);
   Future runSQL(List cookies, String get, String post) async {
     String query = executeRequest(cookies, get, post);
-    List<Row> list = await pool.query(query).then((results)=>results.toList());
-    List<String> retVal = new List();
-    for(Row r in list){
-      String temp = r.toString().substring(8);
-      for(dynamic s in r){
-        temp = temp.replaceAll(" ${s.toString()}", ' "${s.toString()}"');
+    try {
+      List<Row> list = await pool.query(query).then((results) =>
+          results.toList());
+      List<String> retVal = new List();
+      for (Row r in list) {
+        String temp = r.toString().substring(8);
+        for (dynamic s in r) {
+          temp = temp.replaceAll(" ${s.toString()}", ' "${s.toString()}"');
+        }
+        // convert output to JSON
+        temp = temp.replaceAll(":", '":');
+        temp = temp.replaceAll("{", '{"');
+        temp = temp.replaceAll(', ', ', "');
+        retVal.add(temp);
       }
-      // convert output to JSON
-      temp = temp.replaceAll(":", '":');
-      temp = temp.replaceAll("{", '{"');
-      temp = temp.replaceAll(', ', ', "');
-      retVal.add(temp);
+      return retVal;
+    } catch (error){
+      print(error.toString());
+      return error.toString();
     }
-    return retVal;
   }
 }
 
