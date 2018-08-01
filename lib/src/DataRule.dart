@@ -165,8 +165,10 @@ enum InputFormat {JSON, CSV, Slashes, AndData, PositionalData, Cookie}
 abstract class InputStorageMethod extends GlobalDataRule {
   final dynamic inputFormat;
   const InputStorageMethod (this.inputFormat) : super("InputStorageMethod", "");
-  // to be implemented later
-  mapFromJSON(String input){}
+  mapFromJSON(String input){
+    JsonDecoder jd = new JsonDecoder();
+    return jd.convert(input);
+  }
   // to be implemented later
   mapFromCSV(String input){}
   // getting data like /name1/data1/.../namex/datax
@@ -237,7 +239,7 @@ class GetData extends InputStorageMethod {
 class PostData extends InputStorageMethod {
   const PostData (dynamic inputFormat) : super(inputFormat);
   returnMap(List cookies, String getData, String postData){
-    return {};
+    return (getProcessingFunction())(postData);
   }
 }
 

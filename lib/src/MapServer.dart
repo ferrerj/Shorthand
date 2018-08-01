@@ -1,6 +1,7 @@
 library MapServer;
 
 import 'dart:io';
+import 'dart:convert';
 
 class MapServer {
   // url route : (map with further routes or function to generate page)
@@ -42,8 +43,9 @@ class MapServer {
     print('listening on localhost, port ${requestServer.port}');
     await for (HttpRequest request in requestServer) {
       print(request.uri.toString());
+      String post = await request.transform(UTF8.decoder).join();
       request.response
-        ..write(await this.findPage(request.uri.toString(), request.cookies))
+        ..write(await this.findPage(request.uri.toString(), request.cookies, post))
         ..close();
     }
   }
@@ -51,7 +53,7 @@ class MapServer {
   // level 0: base page
   // level 1: routing or a page
   // level 2+: routing found in a sub-site map
-  findPage(var route, var cookies, {int level, Map subMap}) async {
+  findPage(var route, var cookies, var post, {int level, Map subMap}) async {
     if (site == null && hp == null) {
       return "Please set me up!";
     } else if (site == null && hp is Function) {
@@ -66,7 +68,7 @@ class MapServer {
           return "homepage";
         }
       } else {
-        return findPage(route.split("/"), cookies, level: 1);
+        return findPage(route.split("/"), cookies, post, level: 1);
       }
     } else if (route is List) {
       // route is already broken up and routing
@@ -90,7 +92,9 @@ class MapServer {
       } else if (useThisMap[route[level]] is Map) {
         // map found requires further routing
         // TODO: test sub maps more...
-        return findPage(route, cookies,
+        print(findPage(route, cookies, post,
+            level: level++, subMap: useThisMap[route[level]]));
+        return findPage(route, cookies, post,
             level: level++, subMap: useThisMap[route[level]]);
       } else {
         // found a page to generate
@@ -105,7 +109,7 @@ class MapServer {
             get="$get/$data";
           }
         }
-        return await useThisMap[route[level]](cookies, get, "");
+        return await useThisMap[route[level]](cookies, get, post);
       }
     }
   }

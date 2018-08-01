@@ -36,11 +36,15 @@ class LookUp{
   // is from a cookie, get or post will be from a get.
   @FromGet()
   final int id;
+
+  @FromPost()
+  final String name;
 }
 
 @DataSources(const LookUp())
 @HostName("http://192.168.1.19") // for flutter code generation
 @GetData(InputFormat.AndData) // made up the name AndData, basically its /?param=val&param2=val2 format
+@PostData(InputFormat.JSON)
 @DataBaseOptions("example/connection.options") // for database connections
 class TestClass {
   // should be skipped
@@ -116,6 +120,9 @@ class TestClass {
   // DataSources (LookUp) object to build a closure around the function
   @DynamicString()
   String testString = "ID no is {id}";
+
+  @DynamicString()
+  String postTest = "Hello, {name}";
 
   // Similar to DynamicString, only after building the string below, it will
   // query the database using the connections options provided in file provided
