@@ -37,15 +37,19 @@ class MapServer {
     }
   }
 
-  startServer() async {
-    var requestServer =
-        await HttpServer.bind(InternetAddress.ANY_IP_V4, portNo);
+  startServer({SecurityContext securityContext = null}) async {
+    var requestServer;
+    if(securityContext==null){
+        requestServer = await HttpServer.bind(InternetAddress.ANY_IP_V4, portNo);
+    } else {
+      requestServer = await HttpServer.bindSecure(InternetAddress.ANY_IP_V4, portNo, securityContext);
+    }
     print('listening on localhost, port ${requestServer.port}');
     await for (HttpRequest request in requestServer) {
       print(request.uri.toString());
       String post = await request.transform(UTF8.decoder).join();
       request.response
-        ..write(await this.findPage(request.uri.toString(), request.cookies, post))
+        ..write(await findPage(request.uri.toString(), request.cookies, post))
         ..close();
     }
   }
