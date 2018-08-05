@@ -1,23 +1,16 @@
 part of Shorthand_base;
 
-// the rule to rule all (map/internal) rules
-abstract class MapRule extends RuleBase {
+abstract class InternalRule extends RuleBase{
+  const InternalRule();
+
   static Map<String,DataRule> dataRules = new Map();
-  Map transformData(
-      var name, var dataAdded, [DataAggregate da]); // here we transform the data, return a map
-  // dataToBeAdded is whatever the variable/function being analyzed is
-  Map executeRule(var name, var dataToBeAdded, [DataAggregate da]) {
-    return transformData(name, dataToBeAdded, da);
-  }
+
+  Map transformData(var name, var dataAdded, [DataAggregate da]);
+  Map executeRule(var name, var dataToBeAdded, [DataAggregate da]);
   clearDataRules(){
     dataRules = new Map();
   }
-
-
-  const MapRule();
-
   // gets the name of the structure for structure checks
-  // made it static just in case its needed outside of this
   String structureName(var struct) {
     if (struct is Function) {
       return "Function";
@@ -32,48 +25,6 @@ abstract class MapRule extends RuleBase {
     InstanceMirror im = reflect(struct);
 
     return im.toString();
-  }
-  List<Function> httpInputHandlerBuilder(bool hasCookie, bool hasGet, bool hasPost, DataAggregate da){
-    List<Function> httpInputHandlers = new List();
-    if(hasCookie){
-      // special cookie allows for custom made CookieData types
-      // if it doesn't exist and the programmer doesn't want anything fancy
-      // just use a regular old CookieData, doesn't have anything special in it
-      CookieData specialCookie = null;
-      for(dynamic data in da.aggregate.values){
-        if(data is CookieData){
-          specialCookie = data;
-        }
-      }
-      if(specialCookie==null){
-        httpInputHandlers.add((new CookieData()).returnMap);
-      } else {
-        httpInputHandlers.add(specialCookie.returnMap);
-      }
-    } else {
-      httpInputHandlers.add((a, b, c)=> {});
-    }
-    if(hasGet){
-      for(dynamic data in da.aggregate.values){
-        if(data is GetData){
-          httpInputHandlers.add(data.returnMap);
-          break;
-        }
-      }
-    } else {
-      httpInputHandlers.add((a, b, c)=> {});
-    }
-    if(hasPost){
-      for(dynamic data in da.aggregate.values){
-        if(data is PostData){
-          httpInputHandlers.add(data.returnMap);
-          break;
-        }
-      }
-    } else {
-      httpInputHandlers.add((a, b, c)=> {});
-    }
-    return httpInputHandlers;
   }
 
   Function getParser(TypeMirror tm){
@@ -135,6 +86,64 @@ abstract class MapRule extends RuleBase {
         return input;
       };
     }
+  }
+}
+
+// the rule to rule all (map/internal) rules
+abstract class MapRule extends InternalRule {
+
+  Map transformData(
+      var name, var dataAdded, [DataAggregate da]); // here we transform the data, return a map
+  // dataToBeAdded is whatever the variable/function being analyzed is
+  Map executeRule(var name, var dataToBeAdded, [DataAggregate da]) {
+    return transformData(name, dataToBeAdded, da);
+  }
+
+  const MapRule();
+
+
+  // made it static just in case its needed outside of this
+  List<Function> httpInputHandlerBuilder(bool hasCookie, bool hasGet, bool hasPost, DataAggregate da){
+    List<Function> httpInputHandlers = new List();
+    if(hasCookie){
+      // special cookie allows for custom made CookieData types
+      // if it doesn't exist and the programmer doesn't want anything fancy
+      // just use a regular old CookieData, doesn't have anything special in it
+      CookieData specialCookie = null;
+      for(dynamic data in da.aggregate.values){
+        if(data is CookieData){
+          specialCookie = data;
+        }
+      }
+      if(specialCookie==null){
+        httpInputHandlers.add((new CookieData()).returnMap);
+      } else {
+        httpInputHandlers.add(specialCookie.returnMap);
+      }
+    } else {
+      httpInputHandlers.add((a, b, c)=> {});
+    }
+    if(hasGet){
+      for(dynamic data in da.aggregate.values){
+        if(data is GetData){
+          httpInputHandlers.add(data.returnMap);
+          break;
+        }
+      }
+    } else {
+      httpInputHandlers.add((a, b, c)=> {});
+    }
+    if(hasPost){
+      for(dynamic data in da.aggregate.values){
+        if(data is PostData){
+          httpInputHandlers.add(data.returnMap);
+          break;
+        }
+      }
+    } else {
+      httpInputHandlers.add((a, b, c)=> {});
+    }
+    return httpInputHandlers;
   }
 }
 
@@ -220,7 +229,7 @@ class EndPoint extends MapRule implements RuleBase {
         hasPost = true;
       }
     }
-    MapRule.dataRules.addAll({"Input":(new Input(inputNames))});
+    InternalRule.dataRules.addAll({"Input":(new Input(inputNames))});
     httpInputHandlers = httpInputHandlerBuilder(hasCookie, hasGet, hasPost, input.da);
     // build the function
     HttpRequestHandler hrh = new HttpRequestHandler(input.symbol, input.im, httpInputHandlers, inputHandlers, inputParsers);

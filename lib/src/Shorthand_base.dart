@@ -56,15 +56,15 @@ class Shorthand {
       // process the data
       for (InstanceMirror annotation in cm.declarations[x].metadata) {
         if (annotation.reflectee is RuleBase) {
-          if (annotation.reflectee is MapRule) {
+          if (annotation.reflectee is InternalRule) {
             MapRule mr = annotation.reflectee;
             da.addToAggregate(globals.aggregate);
             if(im.getField(x).reflectee is Function){
               // it is a method, will pass method mirror instead
               m.addAll(
                   mr.executeRule(objectMemberName, new EndPointHelperObject(cm.instanceMembers[x].parameters, im, x, da )));
-              if(MapRule.dataRules!={}){
-                  da.addToAggregate(MapRule.dataRules);
+              if(InternalRule.dataRules!={}){
+                  da.addToAggregate(InternalRule.dataRules);
                   mr.clearDataRules();
               }
             } else {
