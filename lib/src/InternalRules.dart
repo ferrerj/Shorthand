@@ -6,8 +6,12 @@ abstract class MapRule extends RuleBase {
   Map transformData(
       var name, var dataAdded, [DataAggregate da]); // here we transform the data, return a map
   // dataToBeAdded is whatever the variable/function being analyzed is
+  // override this to get more complex request handling (write cookies and stuff).
   Map executeRule(var name, var dataToBeAdded, [DataAggregate da]) {
-    return transformData(name, dataToBeAdded, da);
+    Map retMap = transformData(name, dataToBeAdded, da);
+    SimpleMapHelper smh = new SimpleMapHelper(retMap[name]);
+    retMap[name] = smh.transformRequest;
+    return retMap;
   }
   clearDataRules(){
     dataRules = new Map();
@@ -33,7 +37,7 @@ abstract class MapRule extends RuleBase {
 
     return im.toString();
   }
-  List<Function> httpInputHandlerBuilder(bool hasCookie, bool hasGet, bool hasPost, DataAggregate da){
+  static List<Function> httpInputHandlerBuilder(bool hasCookie, bool hasGet, bool hasPost, DataAggregate da){
     List<Function> httpInputHandlers = new List();
     if(hasCookie){
       // special cookie allows for custom made CookieData types
@@ -76,8 +80,8 @@ abstract class MapRule extends RuleBase {
     return httpInputHandlers;
   }
 
-  Function getParser(TypeMirror tm){
-    if(tm.reflectedType is int){
+  static Function getParser(TypeMirror tm){
+    if(tm.reflectedType == int){
       return (String input){
         Match m = (new RegExp("(-)*[0-9]+")).firstMatch(input);
         if(m.groupCount==0){
@@ -85,7 +89,7 @@ abstract class MapRule extends RuleBase {
         }
         return int.parse(input.substring(m.start, m.end));
       };
-    } else if(tm.reflectedType is double){
+    } else if(tm.reflectedType == double){
       return (String input){
         Match m = (new RegExp("(-)*[0-9]*(.)[0-9]*([eE][+-][0-9]+)*")).firstMatch(input);
         if(m.groupCount==0){
@@ -93,7 +97,7 @@ abstract class MapRule extends RuleBase {
         }
         return double.parse(input.substring(m.start, m.end));
       };
-    } else if(tm.reflectedType is String) {
+    } else if(tm.reflectedType == String) {
       return (String input){
         if(input.contains(";")){
           input = input.split(";")[0];
@@ -117,7 +121,7 @@ abstract class MapRule extends RuleBase {
         }
         return input;
       };
-    }else if(tm.reflectedType is bool){
+    }else if(tm.reflectedType == bool){
       return (String input){
         Match m = (new RegExp("((true)|(false)|(t)|(f)|0|1)")).firstMatch(input.toLowerCase());
         if(m.groupCount==0){
@@ -138,6 +142,19 @@ abstract class MapRule extends RuleBase {
   }
 }
 
+// used as an simple write response, no cookie, rule
+class SimpleMapHelper{
+    Function f;
+    SimpleMapHelper(this.f);
+
+    transformRequest(HttpRequest request, String get) async {
+              String post = await request.transform(UTF8.decoder).join();
+              request.response
+                ..write(await f(request.cookies, get, post))
+                ..close();
+    }
+}
+
 // defines a new route
 // used to mark an object which is to be read into the route
 // name used will be the name of the structure, choose carefully
@@ -145,7 +162,7 @@ class Route extends MapRule {
   const Route();
 
   Map transformData(var name, var obj, [DataAggregate da]) {
-    if (obj is! Function) {
+    if (obj is! Function && obj is! String && obj is! num) {
       // this would defeat the purpose
       Shorthand sh = new Shorthand(object: obj, currentRoute: "/$name");
       return {name: sh.generatedMap};
@@ -211,7 +228,7 @@ class EndPoint extends MapRule implements RuleBase {
             paramSource.getFunction(nameOfTheSymbol(parameter.simpleName)));
         //
       }
-      inputParsers.add(getParser(parameter.type));
+      inputParsers.add(MapRule.getParser(parameter.type));
       if (paramSource is FromCookie) {
         hasCookie = true;
       } else if (paramSource is FromGet) {
@@ -221,7 +238,7 @@ class EndPoint extends MapRule implements RuleBase {
       }
     }
     MapRule.dataRules.addAll({"Input":(new Input(inputNames))});
-    httpInputHandlers = httpInputHandlerBuilder(hasCookie, hasGet, hasPost, input.da);
+    httpInputHandlers = MapRule.httpInputHandlerBuilder(hasCookie, hasGet, hasPost, input.da);
     // build the function
     HttpRequestHandler hrh = new HttpRequestHandler(input.symbol, input.im, httpInputHandlers, inputHandlers, inputParsers);
     return {name: hrh.executeRequest};
@@ -254,7 +271,7 @@ class HttpRequestHandler{
   HttpRequestHandler(this.symbol, this.im, this.httpInputHandlers, this.inputHandlers, this.inputParsers);
 
   executeRequest(List cookies, String get, String post){
-    if(inputHandlers==[]){
+    if(inputHandlers==[]){ // no arg funtion
       return im.invoke(symbol, []);
     }
     // get the processed cookies, get, and post data
@@ -305,13 +322,8 @@ class StringReturner {
   }
 }
 
-class DynamicString extends MapRule{
-  const DynamicString();
-
-
-  // obj is a string, name is the name of the string
-  Map transformData(var name, var obj, [DataAggregate da]) {
-    String string = obj;
+class DynamicStringHelper{
+    String string;
     bool hasCookie = false;
     bool hasGet = false;
     bool hasPost = false;
@@ -319,28 +331,42 @@ class DynamicString extends MapRule{
     List<Function> inputHandlers = new List();
     List<String> names = new List();
     List<Function> inputParsers = new List();
-    for(DataRule dr in da.aggregate.values){
-      if(dr is DataSources){
-        Map<String, From> sources = dr.findAllParamSources();
-        for(String source in sources.keys){
-          if(string.contains("{${source}}")){
-            names.add(source);
-            inputHandlers.add(sources[source].getFunction(source));
-            if (sources[source] is FromCookie) {
-              hasCookie = true;
-            } else if (sources[source] is FromGet) {
-              hasGet = true;
-            } else if (sources[source] is FromPost) {
-              hasPost = true;
+    ConnectionPool pool;
+
+    DynamicStringHelper(this.string, DataAggregate da){
+        for(DataRule dr in da.aggregate.values){
+          if(dr is DataSources){
+            Map<String, From> sources = dr.findAllParamSources();
+            for(String source in sources.keys){
+              if(string.contains("{${source}}")){
+                names.add(source);
+                inputHandlers.add(sources[source].getFunction(source));
+                if (sources[source] is FromCookie) {
+                  hasCookie = true;
+                } else if (sources[source] is FromGet) {
+                  hasGet = true;
+                } else if (sources[source] is FromPost) {
+                  hasPost = true;
+                }
+                inputParsers.add(MapRule.getParser(dr.findParamTypeByName(source)));
+              }
             }
-            inputParsers.add(getParser(dr.findParamTypeByName(source)));
+            httpInputHandlers = MapRule.httpInputHandlerBuilder(hasCookie, hasGet, hasPost, da);
+          } else if(dr is DataBaseOptions){
+            pool = dr.getDB();
           }
         }
-        httpInputHandlers = httpInputHandlerBuilder(hasCookie, hasGet, hasPost, da);
-        break;
-      }
     }
-    return {name: (new StringModifier(string, names, httpInputHandlers, inputHandlers, inputParsers)).executeRequest};
+
+}
+
+class DynamicString extends MapRule{
+  const DynamicString();
+
+  // obj is a string, name is the name of the string
+  Map transformData(var name, var obj, [DataAggregate da]) {
+    DynamicStringHelper dsh = new DynamicStringHelper(obj, da);
+    return {name: (new StringModifier(dsh.string, dsh.names, dsh.httpInputHandlers, dsh.inputHandlers, dsh.inputParsers)).executeRequest};
   }
 }
 
@@ -385,38 +411,8 @@ class DynamicSQL extends MapRule{
   const DynamicSQL();
   @override
   Map transformData(var name, var obj, [DataAggregate da]) {
-    String string = obj;
-    bool hasCookie = false;
-    bool hasGet = false;
-    bool hasPost = false;
-    List<Function> httpInputHandlers = new List();
-    List<Function> inputHandlers = new List();
-    List<String> names = new List();
-    List<Function> inputParsers = new List();
-    ConnectionPool pool;
-    for(DataRule dr in da.aggregate.values){
-      if(dr is DataSources){
-        Map<String, From> sources = dr.findAllParamSources();
-        for(String source in sources.keys){
-          if(string.contains("{${source}}")){
-            names.add(source);
-            inputHandlers.add(sources[source].getFunction(source));
-            if (sources[source] is FromCookie) {
-              hasCookie = true;
-            } else if (sources[source] is FromGet) {
-              hasGet = true;
-            } else if (sources[source] is FromPost) {
-              hasPost = true;
-            }
-            inputParsers.add(getParser(dr.findParamTypeByName(source)));
-          }
-        }
-        httpInputHandlers = httpInputHandlerBuilder(hasCookie, hasGet, hasPost, da);
-      } else if(dr is DataBaseOptions){
-        pool = dr.getDB();
-      }
-    }
-    return {name: (new SQLCaller(string, names, httpInputHandlers, inputHandlers, pool, inputParsers)).runSQL};
+    DynamicStringHelper dhs = new DynamicStringHelper(obj, da);
+    return {name: (new SQLCaller(dhs.string, dhs.names, dhs.httpInputHandlers, dhs.inputHandlers, dhs.pool, dhs.inputParsers)).runSQL};
   }
 }
 // need to implement input parsers into string modifier

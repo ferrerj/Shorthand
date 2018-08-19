@@ -47,6 +47,7 @@ class Shorthand {
     for (Symbol x in ll) {
       String objectMemberName =
           x.toString().substring(8, x.toString().length - 2);
+      print(objectMemberName);
       // stores external/data rules to be iterated over later
       DataAggregate da = new DataAggregate();
       ExternalRuleAggregate era = new ExternalRuleAggregate();

@@ -95,11 +95,14 @@ class TestClass {
   @InternetList("Songs")
   @EndPoint()
   songsAgain(int id) {
-    List songLib = [
+    List<Map> songLib = [
       {1: "Little Talks", 2: "Mountain Sound", 3: "Dirty Paws"},
       {4: "Ho Hey", 5: "Ophelia", 6: "Flowers In Your Hair"},
       {7: "Buddy Holly", 8: "Beverly Hills", 9: "Hash Pipe"}
     ];
+    print(songLib);
+    print(id);
+    print(id.runtimeType);
     String returnVal = "[";
     for (int i = 0; i < songLib[id].length; i++) {
       returnVal = "$returnVal {\"id\" : \"${songLib[id].keys

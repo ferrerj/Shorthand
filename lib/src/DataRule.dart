@@ -188,7 +188,7 @@ abstract class InputStorageMethod extends GlobalDataRule {
   // getting data like /?name1=data1&...&namex=datax
   // the leading /? is optional
   mapFromAndData(String input){
-    if(input[0]=="?"){
+    if(input.startsWith("?")){
       input = input.substring(1);
     }
     Map ret = new Map();

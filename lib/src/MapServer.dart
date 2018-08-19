@@ -6,32 +6,22 @@ import 'dart:convert';
 class MapServer {
   // url route : (map with further routes or function to generate page)
   String baseURL;
-  Map site;
+  Map siteMap;
   int portNo;
 
   // these should be functions, really special cases compared to the rest of the site map
-  var nf; // not found
-  var hp; // home page
+  var notFound; // not found
+  var homePage; // home page
 
   // need base url for routing purposes
   // rest can be set later, but server will have lame homepage/not found page
   // will only start on own with a siteMap provided
   MapServer(
-      {Map siteMap,
-      Function notFound,
-      Function homePage,
-      int portNo: 80,
+      {Map this.siteMap,
+      Function this.notFound,
+      Function this.homePage,
+      int this.portNo: 80,
       bool start: true}) {
-    if (siteMap != null) {
-      this.site = siteMap;
-    }
-    if (notFound != null) {
-      this.nf = notFound;
-    }
-    if (homePage != null) {
-      this.hp = homePage;
-    }
-    this.portNo = portNo;
     if (start) {
       startServer();
     }
@@ -47,39 +37,43 @@ class MapServer {
     print('listening on localhost, port ${requestServer.port}');
     await for (HttpRequest request in requestServer) {
       print(request.uri.toString());
-      String post = await request.transform(UTF8.decoder).join();
+      await findPage(request);
+      /*String post = await request.transform(UTF8.decoder).join();
       request.response
-        ..write(await findPage(request.uri.toString(), request.cookies, post))
-        ..close();
+        ..write(await findPage(request.uri.toString(), request))
+        ..close();*/
     }
   }
 
   // level 0: base page
   // level 1: routing or a page
   // level 2+: routing found in a sub-site map
-  findPage(var route, var cookies, var post, {int level, Map subMap}) async {
-    if (site == null && hp == null) {
+  findPage(HttpRequest request, {var route : null, int level, Map subMap}) async {
+    if(route == null){
+      route = request.uri.toString();
+    }
+    if (siteMap == null && homePage == null) {
       return "Please set me up!";
-    } else if (site == null && hp is Function) {
-      return hp();
+    } else if (siteMap == null && homePage is Function) {
+      return homePage();
     }
     if (route is String) {
       // break it up and start routing
       if (route == "/") {
-        if (hp is Function) {
-          return hp();
+        if (homePage is Function) {
+          return homePage();
         } else {
           return "homepage";
         }
       } else {
-        return findPage(route.split("/"), cookies, post, level: 1);
+        return findPage(request, route: route.split("/"), level: 1);
       }
     } else if (route is List) {
       // route is already broken up and routing
       var useThisMap = null;
       if (level < 2) {
         //  no need to check for sub-map, run the function at that level, providing the data at the end of the route info
-        useThisMap = site;
+        useThisMap = siteMap;
       } else {
         // level 2 or greater, need to check sub-map
         // TODO: Test sub maps
@@ -88,17 +82,17 @@ class MapServer {
       }
       if (useThisMap[route[level]] == null) {
         // 404 not found
-        if (nf is Function) {
-          return nf();
+        if (notFound is Function) {
+          return notFound();
         } else {
           return "notfound";
         }
       } else if (useThisMap[route[level]] is Map) {
         // map found requires further routing
         // TODO: test sub maps more...
-        print(findPage(route, cookies, post,
-            level: level++, subMap: useThisMap[route[level]]));
-        return findPage(route, cookies, post,
+        //print(findPage(route, cookies, post,
+        //    level: level++, subMap: useThisMap[route[level]]));
+        return findPage(request, route: route,
             level: level++, subMap: useThisMap[route[level]]);
       } else {
         // found a page to generate
@@ -113,7 +107,8 @@ class MapServer {
             get="$get/$data";
           }
         }
-        return await useThisMap[route[level]](cookies, get, post);
+        print("get is $get");
+        return await useThisMap[route[level]](request, get);
       }
     }
   }
@@ -121,11 +116,11 @@ class MapServer {
   // these set variables which can be set later,
   // depending on how you really want to structure the program
   setNotFound(Function notFoundFunc) {
-    nf = notFoundFunc;
+    notFound = notFoundFunc;
   }
 
   setHomePage(Function homePageFunc) {
-    hp = homePageFunc;
+    homePage = homePageFunc;
   }
 
   setPortNo(int portNumber) {
@@ -135,7 +130,7 @@ class MapServer {
   setMap(var m) {
     // need the map
     if (m is Map) {
-      this.site = m;
+      this.siteMap = m;
     } else {
       print("no map provided");
       exit(0);
