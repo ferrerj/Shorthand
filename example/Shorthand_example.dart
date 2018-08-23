@@ -131,6 +131,7 @@ class TestClass {
   // Similar to DynamicString, only after building the string below, it will
   // query the database using the connections options provided in file provided
   // to the DataBaseOptions declaration and returns the result as a JSON object
+
   @DynamicSQL()
   String testSQL = "SELECT * "
       "             FROM users "

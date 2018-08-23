@@ -148,7 +148,7 @@ class SimpleMapHelper{
     SimpleMapHelper(this.f);
 
     transformRequest(HttpRequest request, String get) async {
-              String post = await request.transform(UTF8.decoder).join();
+              String post = await request.transform(utf8.decoder).join();
               request.response
                 ..write(await f(request.cookies, get, post))
                 ..close();
@@ -254,9 +254,7 @@ class EndPointHelperObject{
   EndPointHelperObject(this.parameters, this.im, this.symbol, this.da);
 }
 
-// helper class for endpoint
-// takes in all functions to process data and run function
-class HttpRequestHandler{
+class BaseClosure {
   // cookie, get, and post handling functions, transforms them into maps
   // each has params function(List args, List cookies, List post)
   List<Function> httpInputHandlers = new List();
@@ -266,14 +264,10 @@ class HttpRequestHandler{
   // takes each input and parses int, double, or bool
   // also makes strings SQL safe so you don't have to.
   List<Function> inputParsers = new List();
-  Symbol symbol; // symbol of object to be invoked from instance mirror
-  InstanceMirror im; // invoke function from instance mirror
-  HttpRequestHandler(this.symbol, this.im, this.httpInputHandlers, this.inputHandlers, this.inputParsers);
 
-  executeRequest(List cookies, String get, String post){
-    if(inputHandlers==[]){ // no arg funtion
-      return im.invoke(symbol, []);
-    }
+  BaseClosure(this.httpInputHandlers, this.inputHandlers, this.inputParsers);
+
+  List getInputs(List cookies, String get, String post){
     // get the processed cookies, get, and post data
     List<Map> maps = new List();
     for(Function httpInputHandler in httpInputHandlers){
@@ -281,16 +275,32 @@ class HttpRequestHandler{
     }
     // send processed data, getting data needed for request in order
     List<dynamic> inputs = new List();
-    /*
-    for(Function inputHandler in inputHandlers){
-      inputs.add(inputHandler(maps[0], maps[1], maps[2]));
-    }
-    */
     for(int x = 0; x<inputHandlers.length; x++){
       inputs.add(inputParsers[x](inputHandlers[x](maps[0], maps[1], maps[2])));
     }
-    // return function
-    return im.invoke(symbol, inputs).reflectee;
+    return inputs;
+  }
+
+}
+
+// helper class for endpoint
+// takes in all functions to process data and run function
+class HttpRequestHandler extends BaseClosure{
+  Symbol symbol; // symbol of object to be invoked from instance mirror
+  InstanceMirror im; // invoke function from instance mirror
+  HttpRequestHandler(this.symbol, this.im, List httpInputHandlers, List inputHandlers, List inputParsers) :
+    super(httpInputHandlers, inputHandlers, inputParsers);
+
+  executeRequest(List cookies, String get, String post){
+    if(inputHandlers==[]){ // no arg funtion
+      return im.invoke(symbol, []);
+    }
+    List inputs = getInputs(cookies, get, post);
+    if(inputs.length!=inputParsers.length){
+      return "";
+    } else{
+      return im.invoke(symbol, inputs).reflectee;
+    }
   }
 }
 
@@ -331,7 +341,7 @@ class DynamicStringHelper{
     List<Function> inputHandlers = new List();
     List<String> names = new List();
     List<Function> inputParsers = new List();
-    ConnectionPool pool;
+    var pool;
 
     DynamicStringHelper(this.string, DataAggregate da){
         for(DataRule dr in da.aggregate.values){
@@ -370,40 +380,26 @@ class DynamicString extends MapRule{
   }
 }
 
-class StringModifier{
-  // cookie, get, and post handling functions, transforms them into maps
-  // each has params function(List args, List cookies, List post)
-  List<Function> httpInputHandlers;
-  // takes maps from above list and gets parts of data necessary for function
-  // each has params function(Map args, Map cookies, Map post)
-  List<Function> inputHandlers;
+class StringModifier extends BaseClosure{
   List<String> names;
   String string; // symbol of object to be invoked from instance mirror
-  List<Function> inputParsers;
-  StringModifier(this.string, this.names, this.httpInputHandlers, this.inputHandlers, this.inputParsers);
+  StringModifier(this.string, this.names, List httpInputHandlers, List inputHandlers, List inputParsers) :
+    super(httpInputHandlers, inputHandlers, inputParsers);
 
   executeRequest(List cookies, String get, String post){
     if(inputHandlers==[]){
       return string;
     }
     String tempString = string;
-    // get the processed cookies, get, and post data
-    List<Map> maps = new List();
-    for(Function httpInputHandler in httpInputHandlers){
-      maps.add(httpInputHandler(cookies, get, post));
-    }
-    // send processed data, getting data needed for request in order
-    List<dynamic> inputs = new List();
-    for(Function inputHandler in inputHandlers){
-      inputs.add(inputHandler(maps[0], maps[1], maps[2]));
-    }
+    List inputs = getInputs(cookies, get, post);
     if(inputs.length!=names.length){
       return "";
+    } else{
+      for(int i = 0; i<names.length; i++){
+        tempString = tempString.replaceAll("{${names[i]}}", inputs[i].toString());
+      }
+      return tempString;
     }
-    for(int i = 0; i<names.length; i++){
-      tempString = tempString.replaceAll("{${names[i]}}", inputParsers[i](inputs[i]).toString());
-    }
-    return tempString;
   }
 }
 
@@ -417,7 +413,7 @@ class DynamicSQL extends MapRule{
 }
 // need to implement input parsers into string modifier
 class SQLCaller extends StringModifier{
-  ConnectionPool pool;
+  var pool;
   JsonEncoder je = new JsonEncoder();
   SQLCaller(String string, List<String> names, List<Function> httpInputHandlers, List<Function> inputHandlers, this.pool, List<Function> inputParsers)
       : super(string, names, httpInputHandlers, inputHandlers, inputParsers);

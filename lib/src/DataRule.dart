@@ -352,15 +352,16 @@ class DataSources extends GlobalDataRule {
 class DataBaseOptions extends GlobalDataRule{
   final String optionsFile;
   const DataBaseOptions(this.optionsFile) : super("DataBaseOptions", "");
-  ConnectionPool getDB(){
+  dynamic getDB() async {
     OptionsFile options = new OptionsFile(optionsFile);
-    String user = options.getString('user');
-    String password = options.getString('password');
-    int port = options.getInt('port', 3306);
-    String db = options.getString('db');
-    String host = options.getString('host', 'localhost');
-    return new ConnectionPool(
-        host: host, port: port, user: user, password: password, db: db, max: 1);
+    var s = ConnectionSettings(
+        user: options.getString('user'),
+        password: options.getString('password'),
+        port: options.getInt('port', 3306),
+        db: options.getString('db'),
+        host: options.getString('host', 'localhost')
+    );
+    return await MySqlConnection.connect(s);
   }
 }
 
