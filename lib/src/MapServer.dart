@@ -1,7 +1,6 @@
 library MapServer;
 
 import 'dart:io';
-import 'dart:convert';
 
 class MapServer {
   // url route : (map with further routes or function to generate page)
@@ -10,7 +9,6 @@ class MapServer {
   int portNo;
 
   // these should be functions, really special cases compared to the rest of the site map
-  var notFound; // not found
   var homePage; // home page
 
   // need base url for routing purposes
@@ -18,7 +16,6 @@ class MapServer {
   // will only start on own with a siteMap provided
   MapServer(
       {Map this.siteMap,
-      Function this.notFound,
       Function this.homePage,
       int this.portNo: 80,
       bool start: true}) {
@@ -30,18 +27,14 @@ class MapServer {
   startServer({SecurityContext securityContext = null}) async {
     var requestServer;
     if(securityContext==null){
-        requestServer = await HttpServer.bind(InternetAddress.ANY_IP_V4, portNo);
+        requestServer = await HttpServer.bind(InternetAddress.anyIPv4, portNo);
     } else {
-      requestServer = await HttpServer.bindSecure(InternetAddress.ANY_IP_V4, portNo, securityContext);
+      requestServer = await HttpServer.bindSecure(InternetAddress.anyIPv4, portNo, securityContext);
     }
     print('listening on localhost, port ${requestServer.port}');
     await for (HttpRequest request in requestServer) {
       print(request.uri.toString());
       await findPage(request);
-      /*String post = await request.transform(UTF8.decoder).join();
-      request.response
-        ..write(await findPage(request.uri.toString(), request))
-        ..close();*/
     }
   }
 
@@ -82,11 +75,10 @@ class MapServer {
       }
       if (useThisMap[route[level]] == null) {
         // 404 not found
-        if (notFound is Function) {
-          return notFound();
-        } else {
-          return "notfound";
-        }
+        request.response.statusCode = HttpStatus.notFound;
+        request.response
+          ..write("")
+          ..close();
       } else if (useThisMap[route[level]] is Map) {
         // map found requires further routing
         // TODO: test sub maps more...
@@ -115,10 +107,6 @@ class MapServer {
 
   // these set variables which can be set later,
   // depending on how you really want to structure the program
-  setNotFound(Function notFoundFunc) {
-    notFound = notFoundFunc;
-  }
-
   setHomePage(Function homePageFunc) {
     homePage = homePageFunc;
   }

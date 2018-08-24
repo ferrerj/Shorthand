@@ -149,9 +149,20 @@ class SimpleMapHelper{
 
     transformRequest(HttpRequest request, String get) async {
               String post = await request.transform(utf8.decoder).join();
-              request.response
-                ..write(await f(request.cookies, get, post))
-                ..close();
+              try {
+                var resp = await f(request.cookies, get, post);
+                request.response
+                  ..write(resp)
+                  ..close();
+              } catch(e){
+                // log error
+                print(e.toString());
+                // write response
+                request.response.statusCode = HttpStatus.notFound;
+                request.response
+                  ..write("")
+                  ..close();
+              }
     }
 }
 
@@ -280,7 +291,6 @@ class BaseClosure {
     }
     return inputs;
   }
-
 }
 
 // helper class for endpoint
@@ -297,7 +307,7 @@ class HttpRequestHandler extends BaseClosure{
     }
     List inputs = getInputs(cookies, get, post);
     if(inputs.length!=inputParsers.length){
-      return "";
+      throw ArgMissMatchException();
     } else{
       return im.invoke(symbol, inputs).reflectee;
     }
@@ -372,7 +382,6 @@ class DynamicStringHelper{
 
 class DynamicString extends MapRule{
   const DynamicString();
-
   // obj is a string, name is the name of the string
   Map transformData(var name, var obj, [DataAggregate da]) {
     DynamicStringHelper dsh = new DynamicStringHelper(obj, da);
@@ -393,7 +402,7 @@ class StringModifier extends BaseClosure{
     String tempString = string;
     List inputs = getInputs(cookies, get, post);
     if(inputs.length!=names.length){
-      return "";
+      throw ArgMissMatchException();
     } else{
       for(int i = 0; i<names.length; i++){
         tempString = tempString.replaceAll("{${names[i]}}", inputs[i].toString());
@@ -419,27 +428,26 @@ class SQLCaller extends StringModifier{
       : super(string, names, httpInputHandlers, inputHandlers, inputParsers);
   Future runSQL(List cookies, String get, String post) async {
     String query = executeRequest(cookies, get, post);
-    try {
-      List<Row> list = await pool.query(query).then((results) =>
-          results.toList());
-      List<String> retVal = new List();
-      for (Row r in list) {
-        String temp = r.toString().substring(8);
-        for (dynamic s in r) {
-          temp = temp.replaceAll(" ${s.toString()}", ' "${s.toString()}"');
-        }
-        // convert output to JSON
-        temp = temp.replaceAll(":", '":');
-        temp = temp.replaceAll("{", '{"');
-        temp = temp.replaceAll(', ', ', "');
-        retVal.add(temp);
+    List<Row> list = await pool.query(query).then((results) =>
+        results.toList());
+    List<String> retVal = new List();
+    for (Row r in list) {
+      String temp = r.toString().substring(8);
+      for (dynamic s in r) {
+        temp = temp.replaceAll(" ${s.toString()}", ' "${s.toString()}"');
       }
-      return retVal;
-    } catch (error){
-      print(error.toString());
-      return error.toString();
+      // convert output to JSON
+      temp = temp.replaceAll(":", '":');
+      temp = temp.replaceAll("{", '{"');
+      temp = temp.replaceAll(', ', ', "');
+      retVal.add(temp);
     }
+    return retVal;
   }
+}
+
+class ArgMissMatchException implements Exception {
+    String errMsg() => "Miss-matched number of arguments provided for function.";
 }
 
 // to be implemented later, runs a legacy script through the terminal

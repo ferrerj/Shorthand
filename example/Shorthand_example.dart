@@ -20,10 +20,6 @@ needed are cookie/header annotations and HTTPS signing.
 testPage() {
   return "Good Job!";
 }
-// temporary 404 example
-pageNotFound() {
-  return "Find a better page.";
-}
 
 // class for using dataSouces annotation
 // list all params used in functions, then just call the class in a param for
@@ -147,5 +143,5 @@ main() async {
   print(sh.generatedMap);
 
   MapServer server = new MapServer(
-      siteMap: sh.generatedMap, homePage: testPage, notFound: pageNotFound);
+      siteMap: sh.generatedMap, homePage: testPage);
 }
