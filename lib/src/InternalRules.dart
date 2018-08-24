@@ -2,6 +2,7 @@ part of Shorthand_base;
 
 // the rule to rule all (map/internal) rules
 abstract class MapRule extends RuleBase {
+  final String RouteName;
   static Map<String,DataRule> dataRules = new Map();
   Map transformData(
       var name, var dataAdded, [DataAggregate da]); // here we transform the data, return a map
@@ -18,7 +19,7 @@ abstract class MapRule extends RuleBase {
   }
 
 
-  const MapRule();
+  const MapRule({this.RouteName = null});
 
   // gets the name of the structure for structure checks
   // made it static just in case its needed outside of this
@@ -170,7 +171,7 @@ class SimpleMapHelper{
 // used to mark an object which is to be read into the route
 // name used will be the name of the structure, choose carefully
 class Route extends MapRule {
-  const Route();
+  const Route({String routeName = null}) : super(RouteName : routeName);
 
   Map transformData(var name, var obj, [DataAggregate da]) {
     if (obj is! Function && obj is! String && obj is! num) {
@@ -186,7 +187,7 @@ class Route extends MapRule {
 // used to mark a function which will serve as a point to hand a web page
 // number of variable inputs, types, and names can be grabbed from function
 class EndPoint extends MapRule implements RuleBase {
-  const EndPoint();
+  const EndPoint({String routeName = null}) : super(RouteName : routeName);
 
   // obj is really a map of the params, the instance mirror,
   // and the symbol in the instance mirror
@@ -317,7 +318,7 @@ class HttpRequestHandler extends BaseClosure{
 // used for static content, mainly strings to be served
 // essentially an end point with some black magic in the background to make it work
 class StaticContent extends MapRule {
-  const StaticContent();
+  const StaticContent({String routeName = null}) : super(RouteName : routeName);
 
   Map transformData(var name, var obj, [DataAggregate da]) {
     // need to write code to get the getString code from string returner
@@ -381,7 +382,7 @@ class DynamicStringHelper{
 }
 
 class DynamicString extends MapRule{
-  const DynamicString();
+  const DynamicString({String routeName = null}) : super(RouteName : routeName);
   // obj is a string, name is the name of the string
   Map transformData(var name, var obj, [DataAggregate da]) {
     DynamicStringHelper dsh = new DynamicStringHelper(obj, da);
@@ -413,7 +414,7 @@ class StringModifier extends BaseClosure{
 }
 
 class DynamicSQL extends MapRule{
-  const DynamicSQL();
+  const DynamicSQL({String routeName = null}) : super(RouteName : routeName);
   @override
   Map transformData(var name, var obj, [DataAggregate da]) {
     DynamicStringHelper dhs = new DynamicStringHelper(obj, da);

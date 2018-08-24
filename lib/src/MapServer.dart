@@ -99,7 +99,6 @@ class MapServer {
             get="$get/$data";
           }
         }
-        print("get is $get");
         return await useThisMap[route[level]](request, get);
       }
     }
