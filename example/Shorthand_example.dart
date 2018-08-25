@@ -16,11 +16,6 @@ for socket code using similar styling as below. Two important features currently
 needed are cookie/header annotations and HTTPS signing.
  */
 
-//temporary homepage example
-testPage() {
-  return "Good Job!";
-}
-
 // class for using dataSouces annotation
 // list all params used in functions, then just call the class in a param for
 // the class being built, declaring where the data comes from
@@ -46,6 +41,11 @@ class LookUp{
 class TestClass {
   // should be skipped
   var test;
+
+  @EndPoint(routeName: HOMEPAGE)
+  homePage(){
+    return "you are home";
+  }
 
   // no arg function
   @Output(const ["name"], const ["id"]) // tells internetlist what to expect, will be depricated soon
@@ -142,6 +142,5 @@ main() async {
 
   print(sh.generatedMap);
 
-  MapServer server = new MapServer(
-      siteMap: sh.generatedMap, homePage: testPage);
+  MapServer server = new MapServer(siteMap: sh.generatedMap);
 }

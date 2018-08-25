@@ -16,7 +16,6 @@ class MapServer {
   // will only start on own with a siteMap provided
   MapServer(
       {Map this.siteMap,
-      Function this.homePage,
       int this.portNo: 80,
       bool start: true}) {
     if (start) {
@@ -51,16 +50,7 @@ class MapServer {
       homePage();
     }
     if (route is String) {
-      // break it up and start routing
-      if (route == "/") {
-        if (homePage is Function) {
-          homePage();
-        } else {
-          "homepage";
-        }
-      } else {
-        return findPage(request, route: route.split("/"), level: 1);
-      }
+      return findPage(request, route: route.split("/"), level: 1);
     } else if (route is List) {
       // route is already broken up and routing
       var useThisMap = null;
@@ -106,10 +96,6 @@ class MapServer {
 
   // these set variables which can be set later,
   // depending on how you really want to structure the program
-  setHomePage(Function homePageFunc) {
-    homePage = homePageFunc;
-  }
-
   setPortNo(int portNumber) {
     portNo = portNumber;
   }

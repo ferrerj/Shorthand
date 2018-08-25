@@ -1,5 +1,7 @@
 part of Shorthand_base;
 
+const String HOMEPAGE = "";
+
 // the rule to rule all (map/internal) rules
 abstract class MapRule extends RuleBase {
   final String RouteName;
@@ -10,9 +12,15 @@ abstract class MapRule extends RuleBase {
   // override this to get more complex request handling (write cookies and stuff).
   Map executeRule(var name, var dataToBeAdded, [DataAggregate da]) {
     Map retMap = transformData(name, dataToBeAdded, da);
-    SimpleMapHelper smh = new SimpleMapHelper(retMap[name]);
-    retMap[name] = smh.transformRequest;
-    return retMap;
+    if(RouteName==null) {
+      SimpleMapHelper smh = new SimpleMapHelper(retMap[name]);
+      retMap[name] = smh.transformRequest;
+      return retMap;
+    } else {
+        SimpleMapHelper smh = new SimpleMapHelper(retMap[name]);
+        return {RouteName : smh.transformRequest};
+    }
+
   }
   clearDataRules(){
     dataRules = new Map();
@@ -285,7 +293,6 @@ class BaseClosure {
     for(Function httpInputHandler in httpInputHandlers){
       maps.add(httpInputHandler(cookies, get, post));
     }
-    print(maps.length);
     // send processed data, getting data needed for request in order
     List<dynamic> inputs = new List();
     for(int x = 0; x<inputHandlers.length; x++){
@@ -307,13 +314,10 @@ class HttpRequestHandler extends BaseClosure{
     if(inputHandlers==[]){ // no arg funtion
       return im.invoke(symbol, []);
     }
-    print("returning inputs");
     List inputs = getInputs(cookies, get, post);
-    print("inputs returned");
     if(inputs.length!=inputParsers.length){
       throw ArgMissMatchException();
     } else{
-      print("calling function");
       return im.invoke(symbol, inputs).reflectee;
     }
   }
