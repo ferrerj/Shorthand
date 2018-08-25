@@ -42,7 +42,7 @@ class LookUp{
 @HostName("http://192.168.1.19") // for flutter code generation
 @GetData(InputFormat.AndData) // made up the name AndData, basically its /?param=val&param2=val2 format
 @PostData(InputFormat.JSON)
-@DataBaseOptions("example/connection.options") // for database connections
+//@DataBaseOptions("example/connection.options") // for database connections
 class TestClass {
   // should be skipped
   var test;
@@ -127,12 +127,12 @@ class TestClass {
   // Similar to DynamicString, only after building the string below, it will
   // query the database using the connections options provided in file provided
   // to the DataBaseOptions declaration and returns the result as a JSON object
-
+/*
   @DynamicSQL()
   String testSQL = "SELECT * "
       "             FROM users "
       "             WHERE id = {id};";
-
+*/
 }
 
 main() async {

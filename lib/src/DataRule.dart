@@ -85,7 +85,7 @@ class Output extends MobileDataRule {
             const ["ObjectFields", "ObjectBuilder", "KeyFields"]);
 
   Map<String, String> mobileSwap() {
-    List<String> things = new List<String>();
+    List<dynamic> things = new List<dynamic>();
     things.addAll(payload);
     things.addAll(key);
     String objectMembers =
@@ -194,7 +194,11 @@ abstract class InputStorageMethod extends GlobalDataRule {
     Map ret = new Map();
     input.split("&").forEach((stringPart){
       List parts = stringPart.split("=");
-      ret[parts[0]] = parts[1];
+      if(parts.length%2==0) {
+        ret[parts[0]] = parts[1];
+      } else {
+        throw BadDataException();
+      }
     });
     return ret;
   }
@@ -226,6 +230,10 @@ abstract class InputStorageMethod extends GlobalDataRule {
   Map blankMap(List cookies, String getData, String postData){
     return {};
   }
+}
+
+class BadDataException implements Exception{
+  String errMsg() => "Data From URL or POST was poorly formed";
 }
 
 class GetData extends InputStorageMethod {

@@ -157,7 +157,7 @@ class SimpleMapHelper{
                   ..close();
               } catch(e){
                 // log error
-                print(e.toString());
+                print("${e.toString()} : ${e.errMsg()}");
                 // write response
                 request.response.statusCode = HttpStatus.notFound;
                 request.response
@@ -285,6 +285,7 @@ class BaseClosure {
     for(Function httpInputHandler in httpInputHandlers){
       maps.add(httpInputHandler(cookies, get, post));
     }
+    print(maps.length);
     // send processed data, getting data needed for request in order
     List<dynamic> inputs = new List();
     for(int x = 0; x<inputHandlers.length; x++){
@@ -299,17 +300,20 @@ class BaseClosure {
 class HttpRequestHandler extends BaseClosure{
   Symbol symbol; // symbol of object to be invoked from instance mirror
   InstanceMirror im; // invoke function from instance mirror
-  HttpRequestHandler(this.symbol, this.im, List httpInputHandlers, List inputHandlers, List inputParsers) :
+  HttpRequestHandler(this.symbol, this.im, List<Function> httpInputHandlers, List<Function> inputHandlers, List<Function> inputParsers) :
     super(httpInputHandlers, inputHandlers, inputParsers);
 
   executeRequest(List cookies, String get, String post){
     if(inputHandlers==[]){ // no arg funtion
       return im.invoke(symbol, []);
     }
+    print("returning inputs");
     List inputs = getInputs(cookies, get, post);
+    print("inputs returned");
     if(inputs.length!=inputParsers.length){
       throw ArgMissMatchException();
     } else{
+      print("calling function");
       return im.invoke(symbol, inputs).reflectee;
     }
   }
@@ -352,7 +356,7 @@ class DynamicStringHelper{
     List<Function> inputHandlers = new List();
     List<String> names = new List();
     List<Function> inputParsers = new List();
-    var pool;
+    var db;
 
     DynamicStringHelper(this.string, DataAggregate da){
         for(DataRule dr in da.aggregate.values){
@@ -374,7 +378,7 @@ class DynamicStringHelper{
             }
             httpInputHandlers = MapRule.httpInputHandlerBuilder(hasCookie, hasGet, hasPost, da);
           } else if(dr is DataBaseOptions){
-            pool = dr.getDB();
+            db = dr.getDB();
           }
         }
     }
@@ -418,18 +422,18 @@ class DynamicSQL extends MapRule{
   @override
   Map transformData(var name, var obj, [DataAggregate da]) {
     DynamicStringHelper dhs = new DynamicStringHelper(obj, da);
-    return {name: (new SQLCaller(dhs.string, dhs.names, dhs.httpInputHandlers, dhs.inputHandlers, dhs.pool, dhs.inputParsers)).runSQL};
+    return {name: (new SQLCaller(dhs.string, dhs.names, dhs.httpInputHandlers, dhs.inputHandlers, dhs.db, dhs.inputParsers)).runSQL};
   }
 }
 // need to implement input parsers into string modifier
 class SQLCaller extends StringModifier{
-  var pool;
+  var db;
   JsonEncoder je = new JsonEncoder();
-  SQLCaller(String string, List<String> names, List<Function> httpInputHandlers, List<Function> inputHandlers, this.pool, List<Function> inputParsers)
+  SQLCaller(String string, List<String> names, List<Function> httpInputHandlers, List<Function> inputHandlers, this.db, List<Function> inputParsers)
       : super(string, names, httpInputHandlers, inputHandlers, inputParsers);
   Future runSQL(List cookies, String get, String post) async {
     String query = executeRequest(cookies, get, post);
-    List<Row> list = await pool.query(query).then((results) =>
+    List<Row> list = await db.query(query).then((results) =>
         results.toList());
     List<String> retVal = new List();
     for (Row r in list) {

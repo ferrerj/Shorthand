@@ -10,9 +10,12 @@ environment:
 dependencies:
   sqljocky5:
     git: https://github.com/dart-db/sqljocky5.git
+
   options_file:
     git: https://github.com/ferrerj/optionsfile.git
 #  path: ^1.4.1
+  pool:
+    version: "^1.0.0"
 
 dev_dependencies:
 

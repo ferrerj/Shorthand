@@ -48,15 +48,15 @@ class MapServer {
     if (siteMap == null && homePage == null) {
       return "Please set me up!";
     } else if (siteMap == null && homePage is Function) {
-      return homePage();
+      homePage();
     }
     if (route is String) {
       // break it up and start routing
       if (route == "/") {
         if (homePage is Function) {
-          return homePage();
+          homePage();
         } else {
-          return "homepage";
+          "homepage";
         }
       } else {
         return findPage(request, route: route.split("/"), level: 1);
